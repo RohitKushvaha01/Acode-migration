@@ -1,0 +1,2 @@
+// Shared build settings for the retained iOS template.
+// Configure signing and the Acode iOS version during the iOS migration.
