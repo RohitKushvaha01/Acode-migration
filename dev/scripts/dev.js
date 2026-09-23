@@ -9,8 +9,8 @@
  *   3. Acode Android build/install (after first successful compilation)
  *   4. File watcher on native sources and JavaScript APIs for rebuilds
  *
- * The app loads boot.js from the APK assets; boot.js detects DEV_MODE and
- * fetches the latest main.js / main.css from the dev server over HTTP.
+ * The app stays at https://localhost and loads dev scripts when reachable,
+ * otherwise using the assets bundled in the APK.
  * A WebSocket connection from the app receives "reload" messages on recompile.
  */
 

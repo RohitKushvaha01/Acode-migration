@@ -10,9 +10,6 @@ module.exports = (env, options) => {
   const devHost = process.env.DEV_HOST || '';
   const devPort = process.env.DEV_PORT || '';
   const devProto = isDev ? (process.env.DEV_PROTO || '') : '';
-  const devOrigin = isDev && devHost && devPort && devProto
-    ? ''.concat(devProto, '://', devHost, ':', devPort)
-    : '';
 
   const typescriptLoader = {
     loader: 'builtin:swc-loader',
@@ -156,7 +153,7 @@ module.exports = (env, options) => {
       filename: '[name].js',
       chunkFilename: '[name].chunk.js',
       assetModuleFilename: '[name][ext]',
-      publicPath: devOrigin ? ''.concat(devOrigin, '/build/') : '/build/',
+      publicPath: 'auto',
       clean: !isDev,
     },
     // TypeScript's Node-only plugin loader uses a dynamic require. It is never

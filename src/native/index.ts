@@ -6,6 +6,7 @@ import device, { initializeDevice } from "./device";
 import installFileAPI, { file } from "./file";
 import ftp from "./ftp";
 import http from "./http/advanced-http";
+import installPluginCompatibility from "./pluginCompatibility";
 import runtime, { expose, initialize, start } from "./runtime";
 import sdcard from "./sdcard";
 import createServer from "./server";
@@ -45,6 +46,7 @@ async function initializeServices() {
 		);
 	if (!__FDROID__)
 		expose("iap", (await import(/* webpackMode: "eager" */ "./iap")).default);
+	installPluginCompatibility();
 	void start(readiness).catch((error) =>
 		console.error("Native initialization failed", error),
 	);

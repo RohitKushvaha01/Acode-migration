@@ -301,6 +301,168 @@ describe("typed native API behavior", () => {
     });
 });
 
+describe("legacy plugin compatibility", () => {
+    test("exposes every former public plugin module through the existing native objects", async () => {
+        const { window } = await createBridge("free");
+        const legacy = window.cordova;
+        expect(legacy).not.toBe(window.Bridge);
+        for (const [id, value] of [
+            ["cordova", legacy],
+            ["cordova/exec", legacy.exec],
+            ["cordova/plugin/android/app", window.navigator.app],
+            ["cordova/plugin/android/statusbar", window.statusbar],
+            ["cordova/plugin/android/splashscreen", window.navigator.splashscreen],
+            ["cordova-clipboard.Clipboard", window.Bridge.clipboard],
+            ["cordova-plugin-device.device", window.device],
+            ["cordova-plugin-server.CreateServer", window.CreateServer],
+            ["cordova-plugin-ftp.ftp", window.ftp],
+            ["cordova-plugin-sdcard.sdcard", window.sdcard],
+            ["cordova-plugin-websocket.WebSocket", window.Bridge.websocket],
+            ["cordova-plugin-buildinfo.BuildInfo", window.BuildInfo],
+            ["cordova-plugin-sftp.sftp", window.sftp],
+            ["com.foxdebug.acode.rk.exec.terminal.Terminal", window.Terminal],
+            ["com.foxdebug.acode.rk.exec.terminal.Executor", window.Executor],
+            ["cordova-plugin-iap.iap", window.iap],
+            ["com.foxdebug.acode.rk.customtabs.CustomTabs", window.CustomTabs],
+            ["cordova-plugin-advanced-http.http", window.Bridge.http],
+            ["cordova-plugin-system.system", window.system],
+            ["admob-plus-cordova.AdMob", window.admob],
+        ]) {
+            expect(value, id).not.toBeUndefined();
+            expect(legacy.require(id), id).toBe(value);
+        }
+        for (const name of ["DirectoryEntry", "DirectoryReader", "Entry", "File", "FileEntry", "FileError", "FileReader", "FileSystem", "FileUploadOptions", "FileUploadResult", "FileWriter", "Flags", "LocalFileSystem", "Metadata", "ProgressEvent", "requestFileSystem"])
+            expect(legacy.require(`cordova-plugin-file.${name}`)).toBe(window[name]);
+        expect(legacy.file).toBe(window.Bridge.file);
+        expect(legacy.websocket).toBe(window.Bridge.websocket);
+        expect(legacy.plugin.http).toBe(window.Bridge.http);
+        expect(legacy.plugins.clipboard).toBe(window.Bridge.clipboard);
+        expect(legacy.require("cordova-plugin-file.fileSystemPaths").file).toBe(legacy.file);
+        expect(legacy.require("cordova-plugin-file.resolveLocalFileSystemURI").resolveLocalFileSystemURL).toBe(window.resolveLocalFileSystemURL);
+        expect(window.device.cordova).toBe(legacy.version);
+        expect(legacy.platformId).toBe("android");
+        expect(legacy.platformVersion).toBe(legacy.version);
+    });
+
+    test("retains native callbacks, HTTP errors, streaming and clipboard calls through old names", async () => {
+        const { window, pending } = await createBridge();
+        const values = [], errors = [];
+        window.cordova.exec(value => values.push(value), error => errors.push(error), "System", "stream", ["input"]);
+        const stream = pending.at(-1);
+        expect([stream.service, stream.action, JSON.parse(stream.args)]).toEqual(["System", "stream", ["input"]]);
+        window.Android.callback({ id: stream.id, status: 1, keep: true, data: "first" });
+        respond(window, stream, "last");
+        respond(window, stream, "stale");
+        expect(values).toEqual(["first", "last"]);
+        window.cordova.plugin.http.sendRequest("https://example.com/token", { method: "post", serializer: "urlencoded", data: { code: "a b" }, followRedirect: false }, value => values.push(value), error => errors.push(error));
+        expect(pending.at(-1).service).toBe("NativeHttpPlugin");
+        expect(pending.at(-1).action).toBe("post");
+        respond(window, pending.at(-1), { status: 401, error: "denied", headers: {}, url: "https://example.com/token" }, 9);
+        expect(errors.at(-1)).toMatchObject({ status: 401, error: "denied" });
+        window.cordova.plugins.clipboard.copy("copied", () => values.push("copied"), error => errors.push(error));
+        expect([pending.at(-1).service, pending.at(-1).action, JSON.parse(pending.at(-1).args)]).toEqual(["Clipboard", "copy", ["copied"]]);
+        respond(window, pending.at(-1), null);
+        window.cordova.plugins.clipboard.paste(value => values.push(value), error => errors.push(error));
+        respond(window, pending.at(-1), "pasted");
+        expect(values.slice(-2)).toEqual(["copied", "pasted"]);
+        expect(Reflect.set(window.cordova, "exec", () => {})).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(window.cordova, "exec").configurable).toBe(false);
+    });
+
+    test("shares readiness, delayed paths and lifecycle events without running startup twice", async () => {
+        const { window, pending } = await createBridge();
+        const channel = window.cordova.require("cordova/channel");
+        const events = [];
+        window.cordova.addConstructor(() => events.push("constructor"));
+        channel.onCordovaReady.subscribe(() => events.push("bridge"));
+        channel.onPluginsReady.subscribe(() => events.push("plugins"));
+        window.document.addEventListener("deviceready", () => events.push("ready"));
+        expect(events).toEqual(["constructor", "bridge", "plugins"]);
+        channel.waitForInitialization("onCordovaReady");
+        expect(channel.deviceReadyChannelsArray.filter(event => event.type === "onBridgeReady")).toHaveLength(1);
+        for (const request of pending.splice(0)) respond(window, request, request.service === "File" ? { dataDirectory: "file:///data/files/" } : {});
+        window.document.dispatchEvent(new window.Event("DOMContentLoaded"));
+        await new Promise(resolve => setTimeout(resolve, 0));
+        channel.onDeviceReady.subscribe(() => events.push("late"));
+        expect(events.slice(-2)).toEqual(["ready", "late"]);
+        expect(window.cordova.file.dataDirectory).toBe("file:///data/files/");
+        const resume = event => events.push(event.type);
+        channel.onResume.subscribe(resume);
+        channel.onPause.subscribe(event => events.push(event.type));
+        window.Bridge.fireDocumentEvent("pause");
+        window.Bridge.fireDocumentEvent("resume");
+        channel.onResume.unsubscribe(resume);
+        window.Bridge.fireDocumentEvent("resume");
+        expect(events.slice(-2)).toEqual(["pause", "resume"]);
+        const custom = window.cordova.addStickyDocumentEventHandler("pluginready");
+        window.cordova.fireDocumentEvent("pluginready", { value: 7 });
+        custom.subscribe(event => events.push(event.value));
+        expect(events.at(-1)).toBe(7);
+        window.cordova.removeDocumentEventHandler("pluginready");
+    });
+
+    test("does not expose advertising or billing in editions that exclude them", async () => {
+        const paid = (await createBridge()).window;
+        expect(() => paid.cordova.require("admob-plus-cordova.AdMob")).toThrow("not found");
+        const fdroid = (await createBridge("paid", true)).window;
+        expect(() => fdroid.cordova.require("cordova-plugin-iap.iap")).toThrow("not found");
+        expect(fdroid.cordova.plugin.http).toBe(fdroid.Bridge.http);
+        expect(bundles.get("paid-false.js")).not.toContain("./src/native/admob/admob.ts");
+        expect(bundles.get("paid-true.js")).not.toContain("./src/native/iap.ts");
+    });
+
+    test("loads plugin-defined modules once and resolves their relative native module imports", async () => {
+        const { window } = await createBridge();
+        const { define, require } = window.cordova;
+        let loads = 0;
+        define("example.native", (require, exports, module) => { loads++; module.exports = require("cordova/exec"); });
+        define("example.client", (require, exports) => { exports.exec = require("./native"); });
+        expect(require("example.client").exec).toBe(window.cordova.exec);
+        expect(require("example.client")).toBe(require("example.client"));
+        expect(loads).toBe(1);
+        expect(() => require("missing")).toThrow("not found");
+        expect(() => define("cordova/exec", () => {})).toThrow("already defined");
+        const base64 = require("cordova/base64");
+        expect(base64.fromArrayBuffer(base64.toArrayBuffer("AP8="))).toBe("AP8=");
+    });
+
+    test("translates old CoreAndroid actions without changing the internal bridge", async () => {
+        const { window, pending } = await createBridge();
+        window.cordova.exec(null, null, "CoreAndroid", "overrideBackbutton", [true]);
+        expect([pending.at(-1).service, pending.at(-1).action, JSON.parse(pending.at(-1).args)]).toEqual(["App", "overrideButton", ["backbutton", true]]);
+        window.cordova.exec(null, null, "CoreAndroid", "overrideButton", ["volumeup", true]);
+        expect(JSON.parse(pending.at(-1).args)).toEqual(["volumeupbutton", true]);
+        window.cordova.exec(null, null, "CoreAndroid", "clearHistory", []);
+        expect([pending.at(-1).service, pending.at(-1).action]).toEqual(["App", "clearHistory"]);
+        window.cordova.exec(null, null, "CordovaHttpPlugin", "abort", [123]);
+        expect([pending.at(-1).service, pending.at(-1).action, JSON.parse(pending.at(-1).args)]).toEqual(["NativeHttpPlugin", "abort", [123]]);
+        window.cordova.exec(null, null, "Device", "getDeviceInfo", null);
+        expect(JSON.parse(pending.at(-1).args)).toEqual([]);
+        window.Bridge.exec(null, null, "CoreAndroid", "overrideBackbutton", [true]);
+        expect([pending.at(-1).service, pending.at(-1).action]).toEqual(["CoreAndroid", "overrideBackbutton"]);
+    });
+
+    test("keeps navigator app navigation and cancellation available to legacy plugins", async () => {
+        const { window, pending } = await createBridge();
+        const jobs = new Map();
+        let nextId = 0;
+        window.setTimeout = (callback, delay) => { jobs.set(++nextId, { callback, delay }); return nextId; };
+        window.clearTimeout = id => jobs.delete(id);
+        window.navigator.app.loadUrl("https://example.com", { wait: 2000 });
+        expect(jobs.get(nextId).delay).toBe(2000);
+        window.cordova.exec(null, null, "CoreAndroid", "cancelLoadUrl");
+        expect(jobs.size).toBe(0);
+        window.cordova.exec(null, null, "CoreAndroid", "loadUrl", ["https://example.com", { openExternal: true, clearHistory: true }]);
+        jobs.get(nextId).callback();
+        expect(pending.slice(-2).map(request => [request.service, request.action, JSON.parse(request.args)])).toEqual([
+            ["App", "clearHistory", []], ["System", "open-in-browser", ["https://example.com"]],
+        ]);
+        window.navigator.app.loadUrl("https://localhost/plugin.html", null);
+        jobs.get(nextId).callback();
+        expect(window.location.href).toBe("https://localhost/plugin.html");
+    });
+});
+
 function respond(window, request, data, status = 1) {
     window.Android.callback({ id: request.id, status, keep: false, data });
 }
