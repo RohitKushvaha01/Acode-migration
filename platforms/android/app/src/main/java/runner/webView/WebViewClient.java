@@ -84,7 +84,7 @@ public final class WebViewClient extends android.webkit.WebViewClient {
       path.indexOf('\0') != -1
     ) return missing();
     try {
-      InputStream stream = activity.getAssets().open("www" + path);
+      InputStream stream = activity.getAssets().open("bundle" + path);
       String mime = path.endsWith(".js")
         ? "application/javascript"
         : path.endsWith(".wasm")

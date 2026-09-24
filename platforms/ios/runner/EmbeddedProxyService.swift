@@ -17,6 +17,8 @@ final class EmbeddedProxyService: BaseService {
         }
     }
 
+    override func reset() { cleanupAll() }
+
     // MARK: - Response Handlers
 
     private func handleResponseStart(args: [Any], callback: Callback) {

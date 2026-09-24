@@ -29,7 +29,6 @@ export default defineConfig({
 		exclude: [
 			...configDefaults.exclude,
 			"src/test/**",
-			"www/**",
 			"platforms/**",
 		],
 	},

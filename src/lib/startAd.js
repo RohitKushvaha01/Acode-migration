@@ -7,12 +7,20 @@ import {
 	bannerVisibilityController,
 } from "./bannerVisibilityController.mjs";
 import config from "./config";
+import platform from "./platform";
 
 export { BANNER_SUPPRESSION_REASON };
 
 export let adUnitIdBanner = "ca-app-pub-5911839694379275/9157899592"; // Production
 export let adUnitIdInterstitial = "ca-app-pub-5911839694379275/9570937608"; // Production
 export let adUnitIdRewarded = "ca-app-pub-5911839694379275/1633667633"; // Production
+if (platform.isIOS) {
+	({
+		banner: adUnitIdBanner,
+		interstitial: adUnitIdInterstitial,
+		rewarded: adUnitIdRewarded,
+	} = (typeof __IOS_AD_UNITS__ !== "undefined" && __IOS_AD_UNITS__) || {});
+}
 export let initialized = false;
 
 /** @type {import("native/admob").BannerAd} */
@@ -26,6 +34,7 @@ export default async function startAd() {
 		if (
 			!config.HAS_PRO &&
 			typeof admob !== "undefined" &&
+			!platform.isIOS &&
 			window.ANDROID_SDK_INT < 29
 		) {
 			console.warn("AdMob not supported on this Android version, skipping ads");
@@ -73,7 +82,7 @@ function canUseAdmob() {
 	return (
 		!config.HAS_PRO &&
 		typeof admob !== "undefined" &&
-		window.ANDROID_SDK_INT >= 29
+		(platform.isIOS || window.ANDROID_SDK_INT >= 29)
 	);
 }
 
@@ -89,8 +98,16 @@ function getConsentCoordinator() {
 
 async function initializeAds() {
 	if (initialized) return;
+	if (
+		platform.isIOS &&
+		(!adUnitIdBanner || !adUnitIdInterstitial || !adUnitIdRewarded)
+	) {
+		throw new Error(
+			"Rebuild the iOS web bundle to configure its advertising IDs.",
+		);
+	}
 
-	if (BuildInfo.buildType === "debug") {
+	if (!platform.isIOS && BuildInfo.buildType === "debug") {
 		console.info("!!! Using test ads");
 		adUnitIdBanner = "ca-app-pub-3940256099942544/6300978111";
 		adUnitIdInterstitial = "ca-app-pub-3940256099942544/1033173712";

@@ -1,10 +1,15 @@
 import UIKit
 import WebKit
+import GameController
 
 final class WebViewController: UIViewController {
     private(set) var webView: WKWebView!
     let bridge = Bridge()
     private(set) var isKeyboardVisible = false
+    private(set) var keyboardHeight: CGFloat = 0
+    private(set) var fullscreen: WebFullscreen!
+    private var contentTop: NSLayoutConstraint!
+    private var contentBottom: NSLayoutConstraint!
     private var scrollObservation: NSKeyValueObservation?
 
     override func viewDidLoad() {
@@ -19,40 +24,62 @@ final class WebViewController: UIViewController {
         config.userContentController = contentController
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
 
-        webView = NoAccessoryWKWebView(frame: .zero, configuration: config)
+        config.preferences.isElementFullscreenEnabled = true
+        config.allowsInlineMediaPlayback = true
+        webView = AppWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
+        #if DEBUG
         webView.isInspectable = true
+        #endif
         webView.scrollView.bounces = false
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.isScrollEnabled = false
         webView.backgroundColor = .black
         webView.isOpaque = false
 
-        view.addSubview(webView)
-        webView.translatesAutoresizingMaskIntoConstraints = false
+        // WebKit reparents the WebView for fullscreen, removing its constraints.
+        let content = UIView()
+        view.addSubview(content)
+        content.addSubview(webView)
+        content.translatesAutoresizingMaskIntoConstraints = false
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        contentTop = content.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+        contentBottom = content.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
         NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: view.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentTop,
+            content.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            contentBottom,
         ])
 
-        // Prevent WebKit from auto-scrolling the scroll view when a text input
-        // is focused and the keyboard appears. Our CSS already positions the page
-        // above the keyboard via `bottom: var(--keyboard-height)`, so the native
-        // scroll-into-view would double-shift the content.
+        // The keyboard layout guide resizes the editor; WebKit scrolling would shift it twice.
         scrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { scrollView, _ in
             if scrollView.contentOffset != .zero {
                 scrollView.contentOffset = .zero
             }
         }
 
+        fullscreen = WebFullscreen(controller: self)
         bridge.setup(webView: webView, viewController: self)
         webView.load(URLRequest(url: URL(string: "acode://localhost/")!))
         observeKeyboard()
 
         NotificationCenter.default.addObserver(self, selector: #selector(appMovedToBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appCameToForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    #if ACODE_FREE
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        bridge.adsService?.banners.layout()
+    }
+    #endif
+
+    func setContentInsets(top: CGFloat, bottom: CGFloat) {
+        guard contentTop.constant != top || contentBottom.constant != -bottom else { return }
+        contentTop.constant = top
+        contentBottom.constant = -bottom
+        view.layoutIfNeeded()
     }
 
     @objc func appMovedToBackground() {
@@ -68,7 +95,7 @@ final class WebViewController: UIViewController {
     private func observeKeyboard() {
         NotificationCenter.default.addObserver(
             self, selector: #selector(keyboardWillShow),
-            name: UIResponder.keyboardWillShowNotification, object: nil
+            name: UIResponder.keyboardWillChangeFrameNotification, object: nil
         )
         NotificationCenter.default.addObserver(
             self, selector: #selector(keyboardWillHide),
@@ -77,15 +104,17 @@ final class WebViewController: UIViewController {
     }
 
     @objc private func keyboardWillShow(_ notification: Notification) {
-        isKeyboardVisible = true
         guard let info = notification.userInfo,
               let frame = info[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-        let keyboardHeight = frame.height
+        let localFrame = view.convert(frame, from: nil)
+        keyboardHeight = max(0, view.bounds.intersection(localFrame).height - view.safeAreaInsets.bottom)
+        isKeyboardVisible = keyboardHeight > 0
         webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('keyboardshow', { detail: { height: \(keyboardHeight) } }))", completionHandler: nil)
     }
 
     @objc private func keyboardWillHide(_ notification: Notification) {
         isKeyboardVisible = false
+        keyboardHeight = 0
         webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('keyboardhide'))", completionHandler: nil)
     }
 
@@ -95,7 +124,18 @@ final class WebViewController: UIViewController {
         themeType == "light" ? .darkContent : .lightContent
     }
 
-    override var prefersStatusBarHidden: Bool { false }
+    var statusBarHidden = false
+    override var prefersStatusBarHidden: Bool { statusBarHidden }
+
+    var systemConfiguration: [String: Any] {
+        let hardwareKeyboard = GCKeyboard.coalesced != nil
+        return ["hardKeyboardHidden": hardwareKeyboard ? 1 : 2, "keyboardHidden": isKeyboardVisible ? 1 : 2,
+                "keyboardHeight": keyboardHeight, "keyboard": hardwareKeyboard ? 2 : 1,
+                "orientation": view.bounds.width > view.bounds.height ? 2 : 1,
+                "navigation": 0, "navigationHidden": 2, "touchscreen": 3,
+                "locale": Locale.current.identifier.replacingOccurrences(of: "_", with: "-"),
+                "fontScale": UIFontMetrics.default.scaledValue(for: 17) / 17]
+    }
 
     func setThemeType(_ type: String) {
         themeType = type
@@ -113,6 +153,10 @@ final class WebViewController: UIViewController {
 }
 
 extension WebViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        bridge.reset()
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .cancel }
         if url.scheme == "acode" { return .allow }
@@ -142,38 +186,5 @@ final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         delegate?.userContentController(controller, didReceive: message)
-    }
-}
-
-// Custom WKWebView that removes the input accessory bar (autocorrect toolbar)
-final class NoAccessoryWKWebView: WKWebView {
-    override var inputAccessoryView: UIView? {
-        return nil
-    }
-    
-    // Recursively remove input accessory view from all subviews
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        removeInputAccessoryView()
-    }
-    
-    private func removeInputAccessoryView() {
-        // Find and remove input accessory view from scroll view subviews
-        guard let targetView = scrollView.subviews.first(where: {
-            String(describing: type(of: $0)).contains("WKContent")
-        }) else { return }
-        
-        // Traverse subviews to find input views
-        for view in targetView.subviews {
-            let viewDescription = String(describing: type(of: view))
-            if viewDescription.contains("WKContent") {
-                for subview in view.subviews {
-                    let subviewDescription = String(describing: type(of: subview))
-                    if subviewDescription.contains("Input") || subviewDescription.contains("Accessory") {
-                        subview.removeFromSuperview()
-                    }
-                }
-            }
-        }
     }
 }

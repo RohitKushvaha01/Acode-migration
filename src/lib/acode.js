@@ -639,7 +639,11 @@ class Acode {
 															/* webpackChunkName: "purchaseHandler" */ "handlers/purchase"
 														);
 														iap.setPurchaseUpdatedListener(
-															...purchaseListener(onpurchase, onerror),
+															...purchaseListener(
+																onpurchase,
+																onerror,
+																product.productId,
+															),
 														);
 														return helpers.promisify(
 															iap.purchase,

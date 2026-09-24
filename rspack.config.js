@@ -1,6 +1,6 @@
 const path = require('path');
 const { rspack } = require('@rspack/core');
-const { getAppConfig } = require('./dev/config');
+const { getAppConfig, getWebBundlePath } = require('./dev/config');
 
 module.exports = (env, options) => {
   const { mode = 'development' } = options;
@@ -149,10 +149,10 @@ module.exports = (env, options) => {
       typescriptLspWorker: './src/cm/lsp/workers/typescript.worker.ts',
     },
     output: {
-      path: path.resolve(__dirname, 'www/build/'),
-      filename: '[name].js',
-      chunkFilename: '[name].chunk.js',
-      assetModuleFilename: '[name][ext]',
+      path: getWebBundlePath(),
+      filename: 'build/[name].js',
+      chunkFilename: 'build/[name].chunk.js',
+      assetModuleFilename: 'build/[name][ext]',
       publicPath: 'auto',
       clean: !isDev,
     },
@@ -184,6 +184,14 @@ module.exports = (env, options) => {
       roots: [],
     },
     plugins: [
+      new rspack.CopyRspackPlugin({
+        patterns: [
+          { from: 'src/index.html', to: 'index.html' },
+          { from: 'src/res/logo.svg', to: 'logo.svg' },
+          { from: 'src/res/favicon.ico', to: 'favicon.ico' },
+          { from: 'src/res/icons/*.svg', to: 'icons/[name][ext]' },
+        ],
+      }),
       ...(variant === 'paid' ? [new rspack.NormalModuleReplacementPlugin(
         /^(?:\.\/|lib\/)(startAd|rewardedAd)(?:\.js)?$/,
         (resource) => {
@@ -193,6 +201,8 @@ module.exports = (env, options) => {
       )] : []),
       new rspack.DefinePlugin({
         __FREE__: JSON.stringify(variant === 'free'),
+        __IOS_AD_UNITS__: JSON.stringify(process.env.ACODE_PLATFORM === 'ios' && variant === 'free'
+          ? require('./dev/scripts/iosAds').adUnits(prod ? 'Release' : 'Debug') : null),
         __FDROID__: JSON.stringify(process.env.ACODE_FDROID === 'true'),
         __DEV_MODE__: JSON.stringify(isDev),
         __DEV_HOST__: JSON.stringify(devHost),
@@ -200,7 +210,7 @@ module.exports = (env, options) => {
         __DEV_PROTO__: JSON.stringify(devProto),
       }),
       new rspack.CssExtractRspackPlugin({
-        filename: '[name].css',
+        filename: 'build/[name].css',
       }),
     ],
   };

@@ -509,6 +509,10 @@ export default {
 	},
 
 	shouldAllowExternalPurchase() {
-		return !this.isIapAvailable() && !isPlayStoreInstall();
+		return (
+			globalThis.Bridge?.platformId !== "ios" &&
+			!this.isIapAvailable() &&
+			!isPlayStoreInstall()
+		);
 	},
 };

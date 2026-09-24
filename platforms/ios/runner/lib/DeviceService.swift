@@ -5,6 +5,16 @@ final class DeviceService: BaseService {
 
     override func exec(action: String, args: [Any], callback: Callback) {
         switch action {
+        case "getDeviceInfo":
+            DispatchQueue.main.async {
+                #if targetEnvironment(simulator)
+                let virtual = true
+                #else
+                let virtual = false
+                #endif
+                let device = UIDevice.current
+                callback.success(["platform": "iOS", "version": device.systemVersion, "uuid": device.identifierForVendor?.uuidString ?? "unknown", "model": device.model, "manufacturer": "Apple", "isVirtual": virtual, "serial": "unknown"])
+            }
         case "id": deviceId(callback: callback)
         default:   callback.error("Unknown action: \(action)")
         }

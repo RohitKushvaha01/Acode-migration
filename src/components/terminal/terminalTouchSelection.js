@@ -1,5 +1,6 @@
 import "./terminalTouchSelection.css";
 import select from "dialogs/select";
+import haptic from "utils/haptic";
 
 const DEFAULT_MORE_OPTION_ID = "__acode_terminal_select_all__";
 const terminalMoreOptions = new Map();
@@ -805,8 +806,8 @@ export default class TerminalTouchSelection {
 		}
 
 		// Haptic feedback
-		if (this.options.hapticFeedback && navigator.vibrate) {
-			navigator.vibrate(50);
+		if (this.options.hapticFeedback) {
+			haptic(50);
 		}
 
 		// Don't change focus state during selection

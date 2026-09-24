@@ -1,3 +1,3 @@
 #!/bin/sh
 set -eu
-exec node dev/scripts/android.js run "$@"
+exec node dev/scripts/native.js run "$@"

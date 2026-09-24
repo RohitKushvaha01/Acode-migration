@@ -150,7 +150,7 @@ async function run(
 		isConsole = true;
 		target = "inapp";
 		filename = "console.html";
-		pathName = `${ASSETS_DIRECTORY}www/`;
+		pathName = ASSETS_DIRECTORY;
 		port = config.CONSOLE_PORT;
 	}
 

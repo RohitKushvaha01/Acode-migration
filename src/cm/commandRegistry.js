@@ -106,6 +106,7 @@ import keyBindings, {
 	APP_KEY_BINDING_NAMES,
 	CODEMIRROR_COMMAND_NAMES,
 } from "lib/keyBindings";
+import platform from "lib/platform";
 import settings from "lib/settings";
 import Url from "utils/Url";
 
@@ -650,16 +651,17 @@ function registerCoreCommands() {
 			return true;
 		},
 	});
-	addCommand({
-		name: "openTerminal",
-		description: "Open Terminal",
-		readOnly: true,
-		requiresView: false,
-		run() {
-			acode.exec("new-terminal");
-			return true;
-		},
-	});
+	if (platform.localExecution)
+		addCommand({
+			name: "openTerminal",
+			description: "Open Terminal",
+			readOnly: true,
+			requiresView: false,
+			run() {
+				acode.exec("new-terminal");
+				return true;
+			},
+		});
 	addCommand({
 		name: "acode:showWelcome",
 		description: "Show Welcome",

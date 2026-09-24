@@ -10,7 +10,7 @@ import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     static weak var shared: AppDelegate?
-    var intentHandler: ((URL) -> Void)?
+    var fullscreenOrientation: UIInterfaceOrientationMask?
 
     func application(
         _ application: UIApplication,
@@ -27,7 +27,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
-        intentHandler?(url)
+        IncomingLinks.shared.receive(url)
         return true
     }
 
@@ -35,7 +35,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?
     ) -> UIInterfaceOrientationMask {
-        UIDevice.current.userInterfaceIdiom == .pad ? .all : .portrait
+        fullscreenOrientation ?? (UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown)
     }
 }
 
@@ -47,6 +47,7 @@ struct AcodeApp: App {
         WindowGroup {
             ContentView()
                 .ignoresSafeArea()
+                .onOpenURL { IncomingLinks.shared.receive($0) }
         }
     }
 }

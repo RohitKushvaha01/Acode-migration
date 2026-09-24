@@ -1,13 +1,15 @@
 import { expect, it, vi } from "vitest";
+import platform from "../../src/lib/platform";
 import { loadSourceModule } from "../helpers/loadSourceModule";
 
-function setup(files) {
+function setup(files, capabilities = platform) {
 	const manager = { files, activeFile: files[0], getFile: id => files.find(file => file.id === id) };
 	const toast = vi.fn(), error = vi.fn();
 	const dependencies = Object.fromEntries([
 		"fileSystem", "@codemirror/commands", "cm/editorReadOnly", "components/sidebar", "dialogs/prompt", "handlers/quickTools", "lib/recents", "utils/color/regex", "utils/Url", "./checkFiles", "./config", "./editorFile", "./lazyImports", "./openFile", "./openFolder", "./run", "./saveState", "./settings", "./showFileInfo",
 	].map(id => [id, {}]));
 	const module = loadSourceModule("src/lib/commands.js", {
+		"./platform": capabilities,
 		...dependencies, "dialogs/confirm": async () => true, "dialogs/select": async () => "save", "utils/helpers": { error },
 	}, { editorManager: manager, strings: {}, toast });
 	return { ...module, manager, toast, error };
@@ -118,4 +120,13 @@ it("keeps pinned tabs untouched by save-and-close and reports complete success f
 	expect(pinned.save).not.toHaveBeenCalled();
 	expect(pinned.remove).not.toHaveBeenCalled();
 	expect(file.remove).toHaveBeenCalledOnce();
+});
+
+it.each([false, true])("exposes Android file commands only when supported: %s", androidIntents => {
+	const commands = setup([], { ...platform, androidIntents }).default;
+	for (const action of ["edit-with", "pin-file-shortcut"]) {
+		expect(typeof commands[action]).toBe(androidIntents ? "function" : "undefined");
+	}
+	expect(commands.share).toBeTypeOf("function");
+	expect(commands["open-with"]).toBeTypeOf("function");
 });

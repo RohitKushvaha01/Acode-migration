@@ -23,10 +23,13 @@ const api = {
 		onFail: NativeCallback,
 	) {
 		exec(
-			onSuccess,
+			(responseCode: number) => {
+				available = true;
+				onSuccess?.(responseCode);
+			},
 			function (error: number) {
-				onFail?.(error);
 				available = error !== 3;
+				onFail?.(error);
 			},
 			"startConnection",
 			[],
@@ -51,6 +54,14 @@ const api = {
 		onFail: NativeCallback,
 	) {
 		exec(onSuccess, onFail, "getPurchases", []);
+	},
+	restorePurchases(
+		onSuccess: (purchaseList: Object[]) => void,
+		onFail: NativeCallback,
+	) {
+		const action =
+			Bridge.platformId === "ios" ? "restorePurchases" : "getPurchases";
+		exec(onSuccess, onFail, action, []);
 	},
 	acknowledgePurchase(
 		purchaseToken: string,

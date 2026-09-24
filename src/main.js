@@ -53,6 +53,7 @@ import loadPlugins from "lib/loadPlugins";
 import Logger from "lib/logger";
 import notificationManager from "lib/notificationManager";
 import openFolder, { addedFolder } from "lib/openFolder";
+import platform from "lib/platform";
 import { registerPrettierFormatter } from "lib/registerPrettierFormatter";
 import restoreFiles from "lib/restoreFiles";
 import settings from "lib/settings";
@@ -120,7 +121,9 @@ async function ensurePermission(permission) {
 async function onDeviceReady() {
 	await initEncodings(); // important to load encodings before anything else
 
-	const isFreePackage = /(free)$/.test(BuildInfo.packageName);
+	const isFreePackage = platform.isIOS
+		? __FREE__
+		: /(free)$/.test(BuildInfo.packageName);
 	const oldResolveURL = window.resolveLocalFileSystemURL;
 	const {
 		externalCacheDirectory, //
@@ -150,7 +153,7 @@ async function onDeviceReady() {
 	window.addedFolder = addedFolder;
 	window.editorManager = null;
 	window.toast = toast;
-	window.ASSETS_DIRECTORY = Url.join(Bridge.file.applicationDirectory, "www");
+	window.ASSETS_DIRECTORY = Url.join(Bridge.file.applicationDirectory, "bundle");
 	window.DATA_STORAGE = await resolveStorageDir(
 		externalDataDirectory,
 		dataDirectory,
@@ -252,11 +255,16 @@ async function onDeviceReady() {
 	await adRewards.init();
 	ensureAceCompatApi();
 
-	if (Number.isInteger(window.ANDROID_SDK_INT) && window.ANDROID_SDK_INT < 33) {
-		await ensurePermission("android.permission.READ_EXTERNAL_STORAGE");
-		await ensurePermission("android.permission.WRITE_EXTERNAL_STORAGE");
+	if (platform.androidStorageAccess) {
+		if (
+			Number.isInteger(window.ANDROID_SDK_INT) &&
+			window.ANDROID_SDK_INT < 33
+		) {
+			await ensurePermission("android.permission.READ_EXTERNAL_STORAGE");
+			await ensurePermission("android.permission.WRITE_EXTERNAL_STORAGE");
+		}
+		await ensurePermission("android.permission.POST_NOTIFICATIONS");
 	}
-	await ensurePermission("android.permission.POST_NOTIFICATIONS");
 
 	const { versionCode } = BuildInfo;
 
@@ -413,6 +421,7 @@ async function onDeviceReady() {
 
 	// Check for app updates
 	if (
+		platform.apkUpdates &&
 		!isPlayStoreInstall() &&
 		settings.value.checkForAppUpdates &&
 		navigator.onLine
@@ -582,8 +591,10 @@ async function setDebugInfo() {
 
 	const info = [
 		`App: v${version} (${versionCode})`,
-		`Android: ${androidVersion}`,
-		`WebView: ${webviewVersion}${webviewStatus}`,
+		platform.isIOS ? `iOS: ${device.version}` : `Android: ${androidVersion}`,
+		platform.isIOS
+			? `WebKit: ${userAgent.match(/AppleWebKit\/([0-9.]+)/)?.[1] || "Unknown"}`
+			: `WebView: ${webviewVersion}${webviewStatus}`,
 		`Language: ${language}`,
 	].join("\n");
 
@@ -597,6 +608,7 @@ function getUpdateMessage(count) {
 }
 
 async function promptUpdateCheckConsent() {
+	if (!platform.apkUpdates) return;
 	try {
 		if (isPlayStoreInstall()) {
 			localStorage.setItem("checkForUpdatesPrompted", "true");
@@ -923,6 +935,8 @@ function createMainMenu({ top, bottom, toggler }) {
 		innerHTML: () => {
 			return mustache.render($_menu, {
 				...strings,
+				local_execution: platform.localExecution,
+				app_exit: platform.appExit,
 				"running processes":
 					strings["running processes"] || "Running processes",
 				can_save_file: canSaveFile(window.editorManager?.activeFile),
@@ -970,6 +984,7 @@ function createFileMenu({ top, bottom, toggler }) {
 				file_encoding: isEditorFile ? encoding : "",
 				file_read_only: !file.editable,
 				file_on_disk: !!file.uri,
+				android_intents: platform.androidIntents,
 				file_eol: isEditorFile ? file.eol : "",
 				copy_text: isEditorFile ? hasSelection : false,
 				is_editor: isEditorFile,

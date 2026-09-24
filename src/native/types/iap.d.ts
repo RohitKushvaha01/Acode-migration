@@ -26,6 +26,10 @@ interface Iap {
 		onSuccess: (purchaseList: Array<Object>) => void,
 		onError: (err: string) => void,
 	): void;
+	restorePurchases(
+		onSuccess: (purchaseList: Array<Object>) => void,
+		onError: (err: string) => void,
+	): void;
 	OK: 0;
 	BILLING_UNAVAILABLE: 3;
 	DEVELOPER_ERROR: 5;

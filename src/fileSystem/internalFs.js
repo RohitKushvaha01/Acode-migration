@@ -41,24 +41,29 @@ const internalFs = {
 
 		return new Promise((resolve, reject) => {
 			reject = setMessage(reject);
+			if (!create) {
+				window.resolveLocalFileSystemURL(filename, write, reject);
+				return;
+			}
 			window.resolveLocalFileSystemURL(
 				dirname,
 				(entry) => {
-					entry.getFile(
-						name,
-						{ create, exclusive },
-						(fileEntry) => {
-							fileEntry.createWriter((file) => {
-								file.onwriteend = (res) => resolve(filename);
-								file.onerror = (err) => reject(err.target.error);
-								file.write(data);
-							});
-						},
-						reject,
-					);
+					entry.getFile(name, { create, exclusive }, write, reject);
 				},
 				reject,
 			);
+
+			function write(fileEntry) {
+				if (fileEntry.isDirectory) {
+					reject({ code: 11 });
+					return;
+				}
+				fileEntry.createWriter((file) => {
+					file.onwriteend = () => resolve(filename);
+					file.onerror = (err) => reject(err.target.error);
+					file.write(data);
+				}, reject);
+			}
 		});
 	},
 

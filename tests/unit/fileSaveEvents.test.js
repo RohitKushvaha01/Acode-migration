@@ -13,6 +13,7 @@ function setup() {
 	].map(id => [id, {}]));
 	const { default: EditorFile } = loadSourceModule("src/lib/editorFile.js", {
 		...defaults,
+		"utils/haptic": vi.fn(),
 		"components/sidebar": { hide: vi.fn() },
 		"@codemirror/state": { EditorState, EditorSelection },
 		"cm/editorUtils": { getDocText: doc => doc.toString() },

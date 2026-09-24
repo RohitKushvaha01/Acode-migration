@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
+import platform from "../../src/lib/platform";
 import { loadSourceModule } from "../helpers/loadSourceModule";
 
 function mockQuickTools() {
@@ -147,6 +148,7 @@ function hostCommands(manager, exec) {
 		"src/cm/commandRegistry.js",
 		{
 			...dependencies,
+			"lib/platform": platform,
 			"@codemirror/state": { Compartment: class {} },
 			"cm/keyBindingUtils": { toCodeMirrorKey: () => null },
 			"lib/keyBindings": {

@@ -25,7 +25,10 @@ export class AdMob {
 	}
 
 	public start() {
-		return (this._startPromise ??= this._start());
+		return (this._startPromise ??= this._start().catch((error) => {
+			this._startPromise = undefined;
+			throw error;
+		}));
 	}
 
 	private _start() {

@@ -3,6 +3,7 @@ import WebKit
 
 protocol ServiceProtocol: AnyObject {
     func exec(action: String, args: [Any], callback: Callback)
+    func reset()
 }
 
 class BaseService: NSObject, ServiceProtocol {
@@ -18,6 +19,8 @@ class BaseService: NSObject, ServiceProtocol {
     func exec(action: String, args: [Any], callback: Callback) {
         callback.error("Action '\(action)' not implemented")
     }
+
+    func reset() {}
 }
 
 // MARK: - Shared utilities

@@ -16,6 +16,7 @@ import EditorFile from "./editorFile";
 import { loadFileBrowser } from "./lazyImports";
 import openFile from "./openFile";
 import openFolder from "./openFolder";
+import platform from "./platform";
 import run from "./run";
 import saveState from "./saveState";
 import appSettings from "./settings";
@@ -157,7 +158,7 @@ async function closeTabs(files, options = {}) {
 	return complete;
 }
 
-export default {
+const commands = {
 	async "run-tests"() {
 		const { runAllTests } = await import(
 			/* webpackChunkName: "tester" */ "test/tester"
@@ -780,7 +781,7 @@ App Info:
 		Version Code: ${appInfo?.versionCode || "N/A"}
 
 Device Info:
-		Android Version: ${device?.version || "N/A"}
+		${platform.isIOS ? "iOS" : "Android"} Version: ${device?.version || "N/A"}
 		Manufacturer: ${device?.manufacturer || "N/A"}
 		Model: ${device?.model || "N/A"}
 		Platform: ${device?.platform || "N/A"}
@@ -842,3 +843,14 @@ Additional Info:
 		showLspInfoDialog();
 	},
 };
+
+if (!platform.localExecution) {
+	delete commands["new-terminal"];
+	delete commands["running-processes"];
+}
+if (!platform.appExit) delete commands.exit;
+if (!platform.androidIntents) {
+	delete commands["edit-with"];
+	delete commands["pin-file-shortcut"];
+}
+export default commands;

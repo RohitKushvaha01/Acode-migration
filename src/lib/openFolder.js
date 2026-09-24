@@ -12,6 +12,7 @@ import select from "dialogs/select";
 import escapeStringRegexp from "escape-string-regexp";
 import fileIcons from "lib/fileIcons";
 import copyEntry from "utils/copyEntry";
+import haptic from "utils/haptic";
 import helpers from "utils/helpers";
 import Path from "utils/Path";
 import Uri from "utils/Uri";
@@ -315,7 +316,7 @@ function handleItems(e) {
  */
 async function handleContextmenu(type, url, name, $target) {
 	if (appSettings.value.vibrateOnTap) {
-		navigator.vibrate(config.VIBRATION_TIME);
+		haptic(config.VIBRATION_TIME);
 	}
 	const { clipBoard, $node } = openFolder.find(url);
 	const cancel = `${strings.cancel}${clipBoard ? ` (${strings[clipBoard.action]})` : ""}`;

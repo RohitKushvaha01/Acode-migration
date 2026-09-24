@@ -44,7 +44,6 @@
 			"src/lang/**/*.json",
 			"src/native/**/*.ts",
 			"src/platforms/**/*.ts",
-			"!www/**/*",
 			"!fastlane/**/*",
 			"!platforms/**/*"
 		]

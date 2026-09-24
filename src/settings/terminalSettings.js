@@ -9,6 +9,7 @@ import alert from "dialogs/alert";
 import confirm from "dialogs/confirm";
 import loader from "dialogs/loader";
 import fonts from "lib/fonts";
+import platform from "lib/platform";
 import appSettings from "lib/settings";
 import FileBrowser from "pages/fileBrowser";
 import helpers from "utils/helpers";
@@ -35,8 +36,10 @@ export default function terminalSettings() {
 
 	const terminalValues = values.terminalSettings;
 
-	Executor.setProotDebug(terminalValues.prootDebug);
-	Executor.BackgroundExecutor.setProotDebug(terminalValues.prootDebug);
+	if (platform.localExecution) {
+		Executor.setProotDebug(terminalValues.prootDebug);
+		Executor.BackgroundExecutor.setProotDebug(terminalValues.prootDebug);
+	}
 
 	const items = [
 		{
@@ -265,7 +268,19 @@ export default function terminalSettings() {
 		},
 	];
 
-	return settingsPage(title, items, callback, undefined, {
+	const supportedItems = items.filter(
+		(item) =>
+			platform.localExecution ||
+			![
+				"all_file_access",
+				"failsafeMode",
+				"prootDebug",
+				"backup",
+				"restore",
+				"uninstall",
+			].includes(item.key),
+	);
+	return settingsPage(title, supportedItems, callback, undefined, {
 		preserveOrder: true,
 		pageClassName: "detail-settings-page",
 		listClassName: "detail-settings-list",

@@ -5,8 +5,10 @@ const mocks = vi.hoisted(() => ({
 	config: { HAS_PRO: false },
 	ready: true,
 	allowed: true,
+	platform: { isIOS: false },
 }));
 vi.mock("lib/config", () => ({ default: mocks.config }));
+vi.mock("lib/platform", () => ({ default: mocks.platform }));
 vi.mock("lib/startAd", () => ({
 	default: mocks.start,
 	adUnitIdRewarded: "test-unit",
@@ -45,6 +47,7 @@ beforeEach(async () => {
 	mocks.config.HAS_PRO = false;
 	mocks.ready = true;
 	mocks.allowed = true;
+	mocks.platform.isIOS = false;
 	mocks.start.mockReset().mockResolvedValue();
 	vi.stubGlobal("window", { ANDROID_SDK_INT: 36 });
 	vi.stubGlobal("admob", { RewardedAd: Ad });
@@ -61,6 +64,16 @@ afterEach(() => {
 });
 
 describe("shared rewarded ad lifecycle", () => {
+	it("allows iOS rewards without an Android SDK version", async () => {
+		mocks.platform.isIOS = true;
+		window.ANDROID_SDK_INT = 0;
+		const result = showRewardedAd();
+		await flush();
+		expect(instances).toHaveLength(1);
+		instances[0].emit("reward");
+		instances[0].emit("dismiss");
+		await expect(result).resolves.toBe(true);
+	});
 	it("waits for reward AND dismissal, retaining verification metadata and cleaning listeners", async () => {
 		const verification = { userId: "guest", customData: "offer=quick&step=1" };
 		const done = vi.fn();

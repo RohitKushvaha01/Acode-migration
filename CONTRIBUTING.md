@@ -108,6 +108,12 @@ Java 27 support currently requires [Gradle 9.8](https://docs.gradle.org/9.8.0-rc
 
 ### Build Steps
 
+Web sources follow the Proteus layout: `src/index.html` is the entry HTML and
+`src/res/` contains static artwork. Rspack writes the complete web bundle to
+`platforms/android/app/src/main/assets/bundle/` or `platforms/ios/runner/bundle/`.
+These directories are generated and ignored by Git. The dev server serves the
+selected platform's bundle; edit source files in `src/`, not generated files.
+
 ```bash
 # Clone the repository
 git clone --recurse-submodules https://github.com/Acode-Foundation/Acode.git
@@ -125,16 +131,217 @@ The APK will be at: `platforms/android/app/build/outputs/apk/<edition>/debug/app
 > [!NOTE]
 > `@codemirror/lsp-client` comes from the `codemirror-lsp-client` git submodule and is installed as a local `file:` dependency, so initialize the submodule before running `npm ci` — see [Troubleshooting](#-troubleshooting).
 
+## iOS development (port in progress)
+
+Use macOS with Xcode 26 and an installed iOS simulator runtime, plus Node.js 24.
+Copy `platforms/ios/Config.xcconfig.example` to `platforms/ios/Config.xcconfig`
+once on a new checkout. This ignored file is only for local signing settings such
+as `DEVELOPMENT_TEAM`; leave the team empty for simulator builds. Keep version,
+icon and other public build settings in the Xcode project.
+Keep `runner/PrivacyInfo.xcprivacy` aligned with native API use: it declares file
+metadata, app-local preferences and elapsed-time measurements. Both targets
+also declare the local capacity checks used by filesystem requests (`E174.1`).
+They include this resource automatically through the template's synchronized folder.
+Check the built app's root manifest when changing target resource membership.
+Use iOS 18.6 or 26.2 for StoreKit integration tests. iOS 26.3–26.5 has a
+[StoreKitTest configuration regression](https://developer.apple.com/forums/thread/826971)
+in command-line runs; CI selects an unaffected installed runtime.
+Android SDK and Java are not needed for an iOS-only build. Install Java to run the
+complete shared test suite, which also checks Android build configuration.
+
+```bash
+npm ci
+npm run dev:ios
+```
+
+Like the Proteus template, this prepares the web bundle and opens Xcode. Select
+the `runner` scheme for paid or `runnerFree` for free, select your connected iPhone,
+and press **Cmd+R** to build, sign and install. Signing uses your local
+`Config.xcconfig`. `npm start -- ios` also opens Xcode after preparing the bundle.
+`--device` is accepted for this flow; `--target` is reserved for scripted simulator
+runs. Keep the Mac and iPhone on the same local network and allow Acode's local
+network access for live reload. Swift changes require another **Cmd+R** in Xcode.
+
+For a scripted simulator build, install and launch, pass its UUID explicitly:
+
+```bash
+xcrun simctl list devices available
+npm run build -- ios dev
+npm start -- ios --target=<simulator-UUID>
+npm run dev:ios -- --target=<simulator-UUID>
+npm run test:ios -- --target=<simulator-UUID>
+```
+
+For the SSH/SFTP and FTP/FTPS integration tests, run the same simulator command inside the
+local fixture. It uses disposable keys, TLS certificates and files, binds only to loopback, and
+does not execute shell commands on your Mac. The wrapper stops it after testing.
+Explicit and implicit FTPS use allocated listener ports; native tests route the
+port-990 profile to its listener while retaining TLS hostname verification.
+These integration cases are skipped when the fixture is absent; CI includes it.
+
+```bash
+python3 -m venv .ios-build/ssh-fixture-venv
+.ios-build/ssh-fixture-venv/bin/pip install -r tests/fixtures/ssh/requirements.txt
+.ios-build/ssh-fixture-venv/bin/python tests/fixtures/ssh/server.py -- npm run test:ios -- --target=<simulator-UUID>
+```
+
+The iOS SSH transport uses pinned libssh2 and OpenSSL Swift packages. Xcode
+resolves them automatically; keep `Package.resolved` in version control. FTP/FTPS
+uses vendored curl source and shares that OpenSSL package. Source provenance,
+configuration and update instructions are in
+[`platforms/ios/Packages/CCurl/README.md`](platforms/ios/Packages/CCurl/README.md).
+FTPS validates the server certificate and hostname; port 990 uses implicit TLS
+and other ports use explicit TLS, with encrypted data connections.
+
+`dev:ios` serves the web bundle over HTTP on the Mac's local-network address.
+With a simulator `--target`, it binds to loopback and automatically rebuilds
+changed Swift sources. Both modes reload JavaScript changes. The app retains its
+`acode://localhost` origin. Normal API connections continue to validate TLS.
+
+The native iOS workspace index uses the system SQLite library and the existing
+`fileIndex` API. Simulator tests exercise persistent scans, incremental updates,
+search/replace events, cancellation and the Search in Files UI. The index lives
+in the app's `Library/NoCloud/workspace-index.sqlite`; it is regenerated from
+workspaces and is excluded from backups. Remote providers keep their JavaScript
+file discovery and search path.
+
+Keep iOS keyboard-mode adaptation in `src/platforms/ios/input.ts`; it restores
+field defaults for prompts and preserves input/autofill semantics. Native menu
+suppression uses `AppWebView` and UIKit's menu builder. Do not remove or replace
+private WebKit input views. Fullscreen tests exercise orientation and restoring
+the editor/preview size after WebKit moves the WebView between containers.
+Filename prompts keep corrections and suggestions disabled on iOS even in normal
+keyboard mode; retain ordinary text defaults and explicit capitalization options.
+On iPad, multitasking can prevent programmatic rotation. A rejected orientation
+request must leave fullscreen usable and clear the temporary orientation policy.
+CI reuses each edition's built tests for focused iPad startup, file-picker, sharing,
+Safari, preview and native UI checks. An iPad UUID also works with `test:ios` above.
+
+`PreviewTransferTests` verifies pending-download cancellation, restoring the editor
+after closing a preview with an alert, and cache invalidation. Keep asynchronous
+navigation and dialog presentation disabled after a preview is closed. For manual
+preview smoke tests, serve an attachment link and an HTML file input: cancel once,
+download twice, then select the first file from Acode/Downloads and compare its
+bytes in the page. `PreviewUploadTests` completes a multi-file multipart upload
+through the native picker's public delegate and compares the selected names, file
+contents and serialized request bytes. Keep touch selection, interrupted transfers
+and external Files providers in manual checks.
+`PreviewDownloadTests` verifies that accepted downloads finish after the preview
+is closed and released, while broken responses remove partial files. Keep accepted
+transfers owned by `PreviewDownloadManager`, separate from preview UI lifetime.
+`SSHTransferTests` cancels a throttled download through the public SFTP bridge and
+checks reconnection. It also drops server connections during 8 MiB uploads and
+downloads, verifies request rejection and disconnected state, and checks that
+retries replace partial content. These tests need the loopback fixture above.
+`FTPTransferTests` checks disconnecting a throttled download and recovering after
+interrupted FTP/FTPS uploads and downloads in active and passive modes. Its
+fixture closes disposable connections mid-transfer; keep these checks local.
+
+The same `package.json.name` selects the edition: paid maps to `app.acode`, free to
+`app.acode.free`. Override the iOS identifier with `ACODE_IOS_BUNDLE_ID` when needed.
+Version and build number come from `package.json`. Simulator builds use ad-hoc
+signing so Keychain services work without a distribution certificate.
+
+The free edition uses the `runnerFree` Xcode target; the paid edition uses `runner`.
+Only `runnerFree` includes `platforms/ios/ads`, the Google Mobile Ads/UMP packages
+and advertising metadata. Debug builds use Google's iOS test units. Free release
+builds require `ACODE_IOS_ADMOB_APP_ID`, `ACODE_IOS_ADMOB_BANNER_ID`,
+`ACODE_IOS_ADMOB_INTERSTITIAL_ID` and `ACODE_IOS_ADMOB_REWARDED_ID`.
+See [iOS advertising](docs/ios-advertising.md) for consent testing, source provenance
+and validation limits. Run the normal script before building `runnerFree` in Xcode;
+it prepares the free target's metadata and the matching web bundle.
+
+The icon picker uses UIKit alternate icons and the existing reward/Pro gates.
+`runner.icon` and the fifteen alternate app-icon sets use Acode's existing
+`src/res/icons` artwork, rasterized at 1024 pixels. Keep these checked-in resources
+aligned when changing the artwork; no generation hook runs during builds.
+The paid scheme includes a Settings interaction test that changes and restores
+the icon, including Apple's confirmation and portrait/landscape rotation on
+iPhone and iPad. Free native tests cover packaged icons
+and the bridge; shared tests cover reward and purchase gates.
+
+The `System` file utilities retain Android's result shapes, newline semantics and
+nonrecursive deletion while restricting paths to the sandbox or granted Files
+folders. Reward-pass state uses Keychain. Android file-edit intents and launcher
+shortcuts are hidden on iOS; sharing and opening exported copies remain available.
+`PluginInstallTests` installs the disposable ZIP in `runnerTests/Fixtures` through
+the Plugins source prompt, exercising extraction, script loading, legacy APIs,
+plugin context and cleanup on both editions. The fixture is test-bundle-only.
+`DocumentsPickerTests` checks picker return values, cancellation and reload
+cleanup; `ShareTests` checks exported copies and share-sheet cleanup. They drive
+the real UIKit controllers through public delegates/completions. Keep native
+Files-provider selection and destination sharing in the manual smoke checks.
+Include Save to Files, opening the exported copy in Acode, and saving an edit back
+to that copy. Existing-file writes must use the file's own grant without resolving
+its parent folder; `internalFsWrite.test.js` covers this alongside creation flags
+and write failures. Incoming share tabs intentionally do not persist in sessions.
+`FilesBrowserTests` opens Documents and reads a selected file through the shared
+file-browser UI and filesystem API, including iOS storage capability checks.
+Keep iOS root-history restoration before device readiness so saved sessions and
+folder-tree paths use the current container. Only recorded roots that remain
+authorized may remap an older URL; do not infer ownership from a container UUID.
+`FileURLTests` checks encoded native URLs, metadata and binary WebView fetches for
+reserved filenames. Use the native `resolveLocalFileSystemURI` alias for encoded
+URLs; the app's `resolveLocalFileSystemURL` wrapper encodes raw paths itself.
+`FileSymlinkTests` checks that entry paths, deletion and moves preserve symlink
+identity and leave targets intact. Keep target authorization on reads even when
+entry metadata retains the link's name.
+Reuse `FileTransfer` for coordinated copies and moves. Native FileEntry replacement
+semantics are covered by `FileTransferTests`; the shared filesystem wrapper keeps
+its existing conflict checks. Successful moves notify file presenters using
+[`item(at:didMoveTo:)`](https://developer.apple.com/documentation/foundation/nsfilecoordinator/item(at:didmoveto:)).
+`FileContentsTests` covers ranged reads, binary-reader chunks, write offsets and
+negative truncation. Preserve Android's EOF and error behavior; invalid truncate
+lengths must never be converted into a successful zero-length write.
+`FileEntryTests` checks filesystem-root boundaries, child paths, creation flags,
+invalid names and capacity requests without allocating the requested space.
+For upgrade smoke tests, save a file and add it to Recents, reinstall the app
+without uninstalling it, then verify editing and Recents after the container moves.
+
+The native `Iap` service uses StoreKit 2 with the existing callback API.
+`IapBridgeTests` loads `runnerTests/Iap.storekit` into StoreKitTest; the fixture
+ships only in the test bundle and does not configure normal app launches.
+Tests make local simulated purchases without an App Store account or real charges.
+The service accepts existing SKU strings unchanged. Configure matching products
+for the chosen production bundle before App Store testing. Transactions expose
+`store: "appstore"` and a signed JWS in `purchaseToken`/`signedTransactionInfo`;
+the backend must verify Apple transactions instead of sending them to Google Play.
+The Settings page includes an iOS-only Restore purchases action. Neither billing
+restrictions nor a missing App Store product enable the Android external checkout.
+Until the backend supports Apple orders and refunds, iOS disables new paid-plugin
+and sponsorship purchases. Free and account-owned plugins can still be installed
+directly, as dependencies and from backups; unowned paid plugins are skipped during
+restore. Keep those gates in `src/lib/platform.js` until the corresponding backend
+flows are verified. Local Pro purchase and restoration remain enabled.
+The Google Play rating action is hidden on iOS until its App Store listing is
+configured. `PlatformUITests` covers Settings/About interaction and copied device
+information; keep store links and restoration instructions specific to the platform.
+
+`npm run build -- ios prod --device` builds an unsigned device app. Use
+`platforms/ios/runner.xcodeproj` in Xcode to configure your team, signing and device
+installation. Direct Xcode builds use the version defaults in `project.pbxproj`;
+the npm scripts supply the version from `package.json`. Tests and build output are under
+`.ios-build/`. `--skip-web` reuses an already-built web bundle.
+
+See [docs/ios-port.md](docs/ios-port.md) before testing feature parity. App Store
+products, iOS advertising identifiers, physical-device validation and several
+native services are still pending.
+
 ## Native Android development
 
 `platforms/android` is checked-in source: edit it directly in Android Studio. There is no platform generation or native plugin installation step.
+
+`FileResourceTest` checks the real WebView request interceptor against local files
+whose names contain URI delimiters and percent escapes. Its file IO runs through
+the native background pool. Keep decoded filesystem paths as paths when creating
+their file URIs; parsing them as URL text loses literal filename characters.
 
 - `platforms/android/app/src/main/java`: Acode runtime and shared native services.
 - `platforms/android/app/src/free`: advertising implementation and metadata.
 - `platforms/android/app/src/store`: billing and proot assets, excluded by `fdroid`.
 - `src/native`: typed native APIs imported by `src/native/index.ts`; `bridge(service)` binds promise-based actions to the shared transport.
 - `src/platforms/android` and `src/platforms/ios`: platform transports using the shared callback and binary protocol.
-- `platforms/ios`: retained iOS template for the future Acode port; Android services are not yet ported to Swift.
+- `platforms/ios`: iOS app, with the template's runtime in `runner` and native services in `runner/lib`. Simulator tests and native dependencies remain alongside the app. See the [port checklist](docs/ios-port.md) for remaining work.
 - `platforms/android/app/src/main/assets/services.json`: native service registration.
 - `package.json`: app ID (`name`), version and Android version code.
 

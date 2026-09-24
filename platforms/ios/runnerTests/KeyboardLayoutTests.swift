@@ -1,0 +1,68 @@
+import XCTest
+import WebKit
+#if ACODE_FREE
+@testable import runnerFree
+#else
+@testable import runner
+#endif
+
+@MainActor
+final class KeyboardLayoutTests: BridgeTestCase {
+    func testKeyboardResizeKeepsTheEditorCaretVisible() async throws {
+        let webView = try await editorWebView()
+        var responder: UIResponder? = webView
+        while responder != nil, !(responder is WebViewController) { responder = responder?.next }
+        let controller = try XCTUnwrap(responder as? WebViewController)
+        let originalFrame = webView.frame
+        defer {
+            webView.frame = originalFrame
+            NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+            webView.reload()
+        }
+        _ = try await webView.callAsyncJavaScript("""
+            const file = new (acode.require('EditorFile'))('ios-keyboard-layout.txt', {
+                text:Array.from({length:200},(_,i)=>'keyboard line '+i).join('\\n'), isUnsaved:false
+            });
+            file.makeActive();
+            await new Promise(resolve=>setTimeout(resolve,200));
+            const view = editorManager.editor;
+            view.dispatch({selection:{anchor:view.state.doc.length},scrollIntoView:true});
+            view.focus();
+            window.iosKeyboardFixture = {file, events:[], listeners:[]};
+            for(const name of ['keyboardShowStart','keyboardShow','keyboardHide']) {
+                const listener=()=>iosKeyboardFixture.events.push(name);
+                iosKeyboardFixture.listeners.push([name,listener]);
+                acode.require('keyboard').on(name,listener);
+            }
+            await new Promise(resolve=>setTimeout(resolve,500));
+            const caret=view.coordsAtPos(view.state.selection.main.head), bounds=view.scrollDOM.getBoundingClientRect();
+            if(!caret || caret.top<bounds.top || caret.bottom>bounds.bottom) throw Error('Fixture caret was not initially visible');
+            iosKeyboardFixture.events.length=0;
+            return true;
+            """, arguments: [:], in: nil, contentWorld: .page)
+
+        let height = min(350, controller.view.bounds.height / 2)
+        let frame = CGRect(x: 0, y: controller.view.bounds.height - height,
+                           width: controller.view.bounds.width, height: height)
+        NotificationCenter.default.post(name: UIResponder.keyboardWillChangeFrameNotification, object: nil,
+            userInfo: [UIResponder.keyboardFrameEndUserInfoKey: controller.view.convert(frame, to: nil)])
+        // Resize WebKit directly so free-edition banner layout cannot undo the fixture.
+        webView.frame.size.height -= min(200, webView.bounds.height / 3)
+        let result = try await webView.callAsyncJavaScript("""
+            try {
+                await new Promise(resolve=>setTimeout(resolve,800));
+                const view=editorManager.editor, caret=view.coordsAtPos(view.state.selection.main.head);
+                const bounds=view.scrollDOM.getBoundingClientRect();
+                const config=await new Promise((resolve,reject)=>Bridge.exec(resolve,reject,'System','get-configuration',[]));
+                return {visible:!!caret && caret.top>=bounds.top && caret.bottom<=bounds.bottom,
+                    caret,bounds:bounds.toJSON(),config,events:iosKeyboardFixture.events,
+                    focused:view.contentDOM.contains(document.activeElement)};
+            } finally {
+                for(const [name,listener] of iosKeyboardFixture.listeners) acode.require('keyboard').off(name,listener);
+                await iosKeyboardFixture.file.remove(true);delete window.iosKeyboardFixture;
+            }
+            """, arguments: [:], in: nil, contentWorld: .page) as? [String: Any]
+        XCTAssertEqual(result?["visible"] as? Bool, true, String(describing: result))
+        XCTAssertTrue((result?["events"] as? [String])?.contains("keyboardShow") == true, String(describing: result))
+    }
+}

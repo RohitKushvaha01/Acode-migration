@@ -95,16 +95,4 @@ androidComponents {
     beforeVariants(selector().all()) { variant ->
         variant.enable = variant.productFlavors[0].second == selectedEdition
     }
-    onVariants(selector().all()) { variant ->
-        def webAssets = tasks.register("sync${variant.name.capitalize()}WebAssets", SyncWebAssets) {
-            from('../../../www') { into 'www' }
-            into(outputDirectory)
-        }
-        variant.sources.assets.addGeneratedSourceDirectory(webAssets) { it.outputDirectory }
-    }
-}
-
-abstract class SyncWebAssets extends Sync {
-    @OutputDirectory
-    abstract DirectoryProperty getOutputDirectory()
 }

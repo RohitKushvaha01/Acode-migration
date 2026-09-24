@@ -1,6 +1,5 @@
 node_modules
 /build.json
-/www/build
 /keystore.jks
 /platforms/android/debug-signing.properties
 /platforms/android/release-signing.properties
@@ -22,4 +21,9 @@ tsconfig.tsbuildinfo
 .pnpm-store/
 platforms/android/**/build/
 platforms/android/.gradle/
-platforms/android/app/src/main/assets/www/
+platforms/**/bundle/
+
+.ios-build/
+**/Config.xcconfig
+platforms/ios/**/*.xcuserstate
+platforms/ios/**/xcuserdata/

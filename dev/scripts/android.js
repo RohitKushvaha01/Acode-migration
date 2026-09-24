@@ -50,7 +50,7 @@ function build(options) {
 				"--mode",
 				options.mode === "p" ? "production" : "development",
 			],
-			{ ACODE_FDROID: String(options.fdroid) },
+			{ ACODE_PLATFORM: "android", ACODE_FDROID: String(options.fdroid) },
 		);
 	}
 	const type = options.mode === "p" ? "release" : "debug";

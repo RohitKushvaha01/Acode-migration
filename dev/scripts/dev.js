@@ -4,13 +4,13 @@
  * Acode Dev Orchestrator
  *
  * Starts:
- *   1. HTTP static file server (serves www/) + WebSocket reload relay (same port)
+ *   1. HTTP static file server (serves the platform bundle) + WebSocket reload relay (same port)
  *   2. rspack --watch with DEV_MODE enabled
- *   3. Acode Android build/install (after first successful compilation)
+ *   3. Acode native build/install (after first successful compilation)
  *   4. File watcher on native sources and JavaScript APIs for rebuilds
  *
- * The app stays at https://localhost and loads dev scripts when reachable,
- * otherwise using the assets bundled in the APK.
+ * The app retains its local origin and loads dev scripts when reachable,
+ * otherwise using the assets bundled in the app.
  * A WebSocket connection from the app receives "reload" messages on recompile.
  */
 
@@ -21,12 +21,11 @@ const https = require("node:https");
 const net = require("node:net");
 const { WebSocketServer } = require("ws");
 const os = require("node:os");
+const { getWebBundlePath } = require("../config");
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 const ROOT = path.resolve(__dirname, "../..");
-const WWW = path.join(ROOT, "www");
-const { parseOptions } = require("./android");
 let currentOptions;
 const MIME = {
 	".html": "text/html",
@@ -174,15 +173,17 @@ function getDevCert() {
 
 // ─── HTTPS + WebSocket server ─────────────────────────────────────────────────
 
-async function createServer(port) {
-	const tls = getDevCert();
+async function createServer(port, useTLS = true) {
+	const tls = useTLS ? getDevCert() : null;
 	let server;
 
 	if (tls) {
 		server = https.createServer(tls, handleRequest);
 	} else {
-		log("warn", "No TLS certificate — falling back to HTTP");
-		log("warn", "Install openssl to enable HTTPS for your dev server");
+		if (useTLS) {
+			log("warn", "No TLS certificate — falling back to HTTP");
+			log("warn", "Install openssl to enable HTTPS for your dev server");
+		}
 		const http = require("node:http");
 		server = http.createServer(handleRequest);
 	}
@@ -207,8 +208,9 @@ function handleRequest(req, res) {
 	let urlPath = req.url.split("?")[0];
 	if (urlPath === "/") urlPath = "/index.html";
 	const relative = path.normalize(urlPath).replace(/^\/+/, "");
-	const filePath = path.join(WWW, relative);
-	if (!filePath.startsWith(WWW + path.sep) && filePath !== WWW) {
+	const bundle = getWebBundlePath(currentOptions.platform);
+	const filePath = path.join(bundle, relative);
+	if (!filePath.startsWith(bundle + path.sep) && filePath !== bundle) {
 		res.writeHead(403);
 		res.end("Forbidden");
 		return;
@@ -245,12 +247,15 @@ function broadcast(wss, message) {
 
 // Native build helpers
 async function launchApp(target, platform, emulator) {
-	if (platform !== "android")
-		throw new Error("Acode native development targets Android.");
-	const args = [path.join(ROOT, "dev/scripts/android.js"), "run", "--skip-web"];
+	const args = [
+		path.join(ROOT, `dev/scripts/${platform}.js`),
+		"run",
+		"--skip-web",
+	];
 	if (currentOptions.fdroid) args.push("fdroid");
+	if (currentOptions.device) args.push("--device");
 	if (target) args.push(`--target=${target}`);
-	if (emulator) args.push("--emulator");
+	if (emulator && platform === "android") args.push("--emulator");
 	await spawnAsync(process.execPath, args, { cwd: ROOT });
 }
 
@@ -261,7 +266,8 @@ function startRspackWatch(host, port, proto, onCompiled) {
 
 	const env = buildSpawnEnv({
 		DEV_MODE: "true",
-		ACODE_FDROID: String(currentOptions.fdroid),
+		ACODE_PLATFORM: currentOptions.platform,
+		ACODE_FDROID: String(!!currentOptions.fdroid),
 		DEV_HOST: host,
 		DEV_PORT: String(port),
 		DEV_PROTO: proto,
@@ -328,16 +334,31 @@ function startRspackWatch(host, port, proto, onCompiled) {
 	return proc;
 }
 
-// Recompile tracked Android source when it changes.
-function watchAndroid(platform, target, emulator) {
+function watchNative(platform, target, emulator) {
+	if (platform === "ios" && !target) return;
 	const chokidar = require("chokidar");
 	let timer;
 	let building = false;
 	let pending = false;
-	const watcher = chokidar.watch(path.join(ROOT, "platforms/android/app/src"), {
-		ignoreInitial: true,
-		awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
-	});
+	const sources =
+		platform === "ios"
+			? [
+					"platforms/ios/runner",
+					"platforms/ios/ads",
+					"dev/ios",
+					"dev/scripts/iosAds.js",
+					"platforms/ios/runner.xcodeproj/project.pbxproj",
+					"platforms/ios/Config.xcconfig",
+				]
+			: ["platforms/android/app/src"];
+	const watcher = chokidar.watch(
+		sources.map((source) => path.join(ROOT, source)),
+		{
+			ignoreInitial: true,
+			ignored: (file) => file.split(path.sep).includes("bundle"),
+			awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
+		},
+	);
 	watcher.on("all", () => {
 		pending = true;
 		clearTimeout(timer);
@@ -350,7 +371,7 @@ function watchAndroid(platform, target, emulator) {
 		try {
 			await launchApp(target, platform, emulator);
 		} catch (error) {
-			log("warn", `Android rebuild failed: ${error.message}`);
+			log("warn", `${platform} rebuild failed: ${error.message}`);
 		} finally {
 			building = false;
 			if (pending) void rebuild();
@@ -362,9 +383,14 @@ function watchAndroid(platform, target, emulator) {
 
 async function main() {
 	const args = process.argv.slice(2);
-	const platform =
-		args.find((a) => /^(android|ios|browser)$/i.test(a)) || "android";
-	currentOptions = parseOptions(args);
+	const platform = (
+		args.find((a) => /^(android|ios|browser)$/i.test(a)) || "android"
+	).toLowerCase();
+	if (platform === "browser")
+		throw new Error("Choose android or ios for native development.");
+	if (platform === "ios" && process.platform !== "darwin")
+		throw new Error("iOS development requires macOS and Xcode.");
+	currentOptions = { ...require(`./${platform}`).parseOptions(args), platform };
 	const target =
 		args.find((a) => a.startsWith("--target="))?.split("=")[1] || null;
 	const emulator = args.includes("--emulator") || args.includes("-e");
@@ -376,17 +402,21 @@ async function main() {
 		`Configuring ${currentOptions.targetId} (${currentOptions.variant})...`,
 	);
 
-	const host = getLocalIP();
+	const simulator = platform === "ios" && !!target;
+	const host = simulator ? "127.0.0.1" : getLocalIP();
 	const port = await getFreePort();
 
 	log("info", `Local IP:   ${host}`);
 	log("info", `Port:       ${port}`);
 
 	// 2. Start HTTPS (or HTTP fallback) + WebSocket server
-	const { server, broadcast, protocol } = await createServer(port);
+	const { server, broadcast, protocol } = await createServer(
+		port,
+		platform !== "ios",
+	);
 	const origin = `${protocol}://${host}:${port}`;
 	log("info", `Dev Origin: ${origin}`);
-	server.listen(port, () => {
+	server.listen(port, platform === "ios" ? host : undefined, () => {
 		log("ok", "Dev server started");
 	});
 
@@ -404,12 +434,11 @@ async function main() {
 				} catch (err) {
 					log("warn", `Launch failed: ${err.message}`);
 				}
-			}, 3000); // give APK install time
+			}, 3000);
 		}
 	});
 
-	// 4. Rebuild Android when its source changes
-	watchAndroid(platform, target, emulator);
+	watchNative(platform, target, emulator);
 
 	// Graceful shutdown
 	process.on("SIGINT", () => {

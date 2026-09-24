@@ -1,10 +1,12 @@
 import { fromArrayBuffer } from "../../native/base64";
 import type { NativeExec } from "../../native/bridge";
 import { createTransport } from "../../native/bridge";
+import installAPITransport from "./api";
 import proxy from "./proxy";
 
 export interface IOSReply {
 	id: number;
+	status?: number;
 	keep?: boolean;
 	success?: unknown;
 	error?: unknown;
@@ -13,6 +15,7 @@ export interface IOSReply {
 }
 
 export default function setup() {
+	installAPITransport();
 	const transport = createTransport((service, action, args, id) => {
 		window.webkit.messageHandlers.exec.postMessage({
 			service,
@@ -32,7 +35,7 @@ export default function setup() {
 			transport.receive({
 				id: reply.id,
 				keep: reply.keep,
-				status: failed ? 9 : 1,
+				status: reply.status ?? (failed ? 9 : 1),
 				data: failed ? reply.error : data,
 			});
 		},

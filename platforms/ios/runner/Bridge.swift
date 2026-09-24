@@ -4,6 +4,8 @@ final class Bridge: NSObject, WKScriptMessageHandler {
     private(set) weak var webView: WKWebView?
     private(set) weak var viewController: WebViewController?
     private var services: [String: ServiceProtocol] = [:]
+    private var serviceQueues: [String: DispatchQueue] = [:]
+    private var navigationID = UUID()
 
     func setup(webView: WKWebView, viewController: WebViewController) {
         self.webView = webView
@@ -17,8 +19,34 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             "Notification":    NotificationService(bridge: self),
             "Scanner":         ScannerService(bridge: self),
             "EmbeddedProxy":   EmbeddedProxyService(bridge: self),
+            "File":            FileService(bridge: self),
+            "BuildInfo":       BuildInfoService(bridge: self),
+            "Clipboard":       ClipboardService(bridge: self),
+            "App":             AppService(bridge: self),
+            "SystemBarPlugin": SystemBarService(bridge: self),
+            "System":          SystemService(bridge: self),
+            "SDcard":          DocumentsService(bridge: self),
+            "NativeHttpPlugin": NativeHTTPService(bridge: self),
+            "WebSocketPlugin": WebSocketService(bridge: self),
+            "Tee":             PluginContextService(bridge: self),
+            "Authenticator":   AuthenticatorService(bridge: self),
+            "CustomTabs":      SafariService(bridge: self),
+            "Server":          ServerService(bridge: self),
+            "Browser":         BrowserService(bridge: self),
+            "AcodeWebView":    PluginWebViewService(bridge: self),
+            "Sftp":            SFTPService(bridge: self),
+            "Ftp":             FTPService(bridge: self),
+            "Iap":             IapService(bridge: self),
         ]
+        #if ACODE_FREE
+        services["AdMob"] = AMBPlugin(bridge: self)
+        #endif
+        serviceQueues = services.mapValues { _ in DispatchQueue(label: "app.acode.service." + UUID().uuidString, qos: .userInitiated) }
     }
+
+    #if ACODE_FREE
+    var adsService: AMBPlugin? { services["AdMob"] as? AMBPlugin }
+    #endif
 
     // Called on the main thread by WKWebView.
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -27,8 +55,18 @@ final class Bridge: NSObject, WKScriptMessageHandler {
               let service = body["service"] as? String,
               let action = body["action"] as? String,
               let argsString = body["args"] as? String,
-              let id = body["id"] as? Int,
-              let svc = services[service] else { return }
+              let id = body["id"] as? Int else { return }
+
+        let currentNavigation = navigationID
+        let callback = Callback(id: id, webView: webView, isValid: { [weak self] in self?.navigationID == currentNavigation })
+        guard message.frameInfo.isMainFrame,
+              let source = message.frameInfo.request.url,
+              source.scheme == "acode", source.host == "localhost" else {
+            callback.error("Native services are only available to the app"); return
+        }
+        guard let svc = services[service] else {
+            callback.error(["code": "UNSUPPORTED_SERVICE", "message": "\(service) is unavailable on iOS"]); return
+        }
 
         let args: [Any]
         if let data = argsString.data(using: .utf8),
@@ -38,9 +76,13 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             args = []
         }
 
-        let callback = Callback(id: id, webView: webView)
-        DispatchQueue.global(qos: .userInitiated).async {
+        serviceQueues[service]?.async {
             svc.exec(action: action, args: args, callback: callback)
         }
+    }
+
+    func reset() {
+        navigationID = UUID()
+        for (name, service) in services { serviceQueues[name]?.async { service.reset() } }
     }
 }

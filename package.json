@@ -10,11 +10,13 @@
     "start": "sh dev/scripts/start.sh",
     "dev": "node dev/scripts/dev.js",
     "dev:android": "node dev/scripts/dev.js android",
+    "dev:ios": "node dev/scripts/dev.js ios",
     "lint": "biome lint --write",
     "format": "biome format --write",
     "check": "biome check --write",
     "test": "vitest run",
     "test:android": "node dev/scripts/android.js test",
+    "test:ios": "node dev/scripts/ios.js test",
     "typecheck": "tsc --noEmit",
     "test:watch": "vitest"
   },

@@ -9,11 +9,46 @@
 /* Begin PBXBuildFile section */
 		122FC5962F9CEDE000BE113A /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 122FC5952F9CEDE000BE113A /* DeviceKit */; };
 		12D6D3972FFEE6770006230E /* runner.icon in Resources */ = {isa = PBXBuildFile; fileRef = 12D6D3962FFEE6770006230E /* runner.icon */; };
+		AC0DE3000000000000000001 /* CSSH2 in Frameworks */ = {isa = PBXBuildFile; productRef = AC0DE3000000000000000003 /* CSSH2 */; };
+		AC0DE4000000000000000001 /* AcodeCurl in Frameworks */ = {isa = PBXBuildFile; productRef = AC0DE4000000000000000003 /* AcodeCurl */; };
+		AC0DEAD00000000000000005 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 122FC5952F9CEDE000BE113A /* DeviceKit */; };
+		AC0DEAD00000000000000006 /* CSSH2 in Frameworks */ = {isa = PBXBuildFile; productRef = AC0DE3000000000000000003 /* CSSH2 */; };
+		AC0DEAD00000000000000007 /* AcodeCurl in Frameworks */ = {isa = PBXBuildFile; productRef = AC0DE4000000000000000003 /* AcodeCurl */; };
+		AC0DEAD00000000000000009 /* runner.icon in Resources */ = {isa = PBXBuildFile; fileRef = 12D6D3962FFEE6770006230E /* runner.icon */; };
+		AC0DEAD00000000000000012 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = AC0DEAD00000000000000011 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		AC0DE2000000000000000005 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 12D2F2EB2F843F1F000D37BC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 12D2F2F22F843F1F000D37BC;
+			remoteInfo = runner;
+		};
+		AC0DE600000000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 12D2F2EB2F843F1F000D37BC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 12D2F2F22F843F1F000D37BC;
+			remoteInfo = runner;
+		};
+		AC0DEAD0000000000000001B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 12D2F2EB2F843F1F000D37BC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC0DEAD00000000000000001;
+			remoteInfo = runnerFree;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		1249911F30644EB800C84B4D /* runnerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = runnerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		12D2F2F32F843F1F000D37BC /* runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		12D6D3962FFEE6770006230E /* runner.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = runner.icon; sourceTree = "<group>"; };
+		AC0DE2000000000000000001 /* runnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = runnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC0DEAD00000000000000002 /* runnerFree.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = runnerFree.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC0DEAD00000000000000014 /* runnerFreeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = runnerFreeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEADBEEF1234DEADBEEF1234 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -25,6 +60,13 @@
 			);
 			target = 12D2F2F22F843F1F000D37BC /* runner */;
 		};
+		AC0DEAD0000000000000000F /* Exceptions for "runner" folder in "runnerFree" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AC0DEAD00000000000000001 /* runnerFree */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,8 +74,27 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				12D2F2F62F843F1F000D37BC /* Exceptions for "runner" folder in "runner" target */,
+				AC0DEAD0000000000000000F /* Exceptions for "runner" folder in "runnerFree" target */,
+			);
+			explicitFolders = (
+				bundle,
 			);
 			path = runner;
+			sourceTree = "<group>";
+		};
+		AC0DE2000000000000000002 /* runnerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = runnerTests;
+			sourceTree = "<group>";
+		};
+		AC0DE6000000000000000003 /* runnerUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = runnerUITests;
+			sourceTree = "<group>";
+		};
+		AC0DEAD0000000000000000E /* ads */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ads;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -44,6 +105,40 @@
 			buildActionMask = 2147483647;
 			files = (
 				122FC5962F9CEDE000BE113A /* DeviceKit in Frameworks */,
+				AC0DE3000000000000000001 /* CSSH2 in Frameworks */,
+				AC0DE4000000000000000001 /* AcodeCurl in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DE2000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DE6000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DEAD00000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AC0DEAD00000000000000005 /* DeviceKit in Frameworks */,
+				AC0DEAD00000000000000006 /* CSSH2 in Frameworks */,
+				AC0DEAD00000000000000007 /* AcodeCurl in Frameworks */,
+				AC0DEAD00000000000000012 /* GoogleMobileAds in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DEAD00000000000000016 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,8 +150,11 @@
 			children = (
 				12D2F2F52F843F1F000D37BC /* runner */,
 				12D2F2F42F843F1F000D37BC /* Products */,
+				AC0DE2000000000000000002 /* runnerTests */,
 				DEADBEEF1234DEADBEEF1234 /* Config.xcconfig */,
 				12D6D3962FFEE6770006230E /* runner.icon */,
+				AC0DEAD0000000000000000E /* ads */,
+				AC0DE6000000000000000003 /* runnerUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -64,6 +162,10 @@
 			isa = PBXGroup;
 			children = (
 				12D2F2F32F843F1F000D37BC /* runner.app */,
+				AC0DE2000000000000000001 /* runnerTests.xctest */,
+				AC0DEAD00000000000000002 /* runnerFree.app */,
+				AC0DEAD00000000000000014 /* runnerFreeTests.xctest */,
+				1249911F30644EB800C84B4D /* runnerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -89,10 +191,102 @@
 			name = runner;
 			packageProductDependencies = (
 				122FC5952F9CEDE000BE113A /* DeviceKit */,
+				AC0DE3000000000000000003 /* CSSH2 */,
+				AC0DE4000000000000000003 /* AcodeCurl */,
 			);
 			productName = runner;
 			productReference = 12D2F2F32F843F1F000D37BC /* runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		AC0DE2000000000000000007 /* runnerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC0DE2000000000000000008 /* Build configuration list for PBXNativeTarget "runnerTests" */;
+			buildPhases = (
+				AC0DE2000000000000000003 /* Sources */,
+				AC0DE2000000000000000004 /* Frameworks */,
+				AC0DE5000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC0DE2000000000000000006 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AC0DE2000000000000000002 /* runnerTests */,
+			);
+			name = runnerTests;
+			productName = runnerTests;
+			productReference = AC0DE2000000000000000001 /* runnerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AC0DE6000000000000000001 /* runnerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC0DE6000000000000000007 /* Build configuration list for PBXNativeTarget "runnerUITests" */;
+			buildPhases = (
+				AC0DE6000000000000000004 /* Sources */,
+				AC0DE6000000000000000005 /* Frameworks */,
+				AC0DE6000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC0DE600000000000000000A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AC0DE6000000000000000003 /* runnerUITests */,
+			);
+			name = runnerUITests;
+			productName = runnerUITests;
+			productReference = 1249911F30644EB800C84B4D /* runnerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		AC0DEAD00000000000000001 /* runnerFree */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC0DEAD0000000000000000B /* Build configuration list for PBXNativeTarget "runnerFree" */;
+			buildPhases = (
+				AC0DEAD00000000000000003 /* Sources */,
+				AC0DEAD00000000000000004 /* Frameworks */,
+				AC0DEAD00000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				12D2F2F52F843F1F000D37BC /* runner */,
+				AC0DEAD0000000000000000E /* ads */,
+			);
+			name = runnerFree;
+			packageProductDependencies = (
+				122FC5952F9CEDE000BE113A /* DeviceKit */,
+				AC0DE3000000000000000003 /* CSSH2 */,
+				AC0DE4000000000000000003 /* AcodeCurl */,
+				AC0DEAD00000000000000011 /* GoogleMobileAds */,
+			);
+			productName = runnerFree;
+			productReference = AC0DEAD00000000000000002 /* runnerFree.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AC0DEAD00000000000000013 /* runnerFreeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC0DEAD00000000000000018 /* Build configuration list for PBXNativeTarget "runnerFreeTests" */;
+			buildPhases = (
+				AC0DEAD00000000000000015 /* Sources */,
+				AC0DEAD00000000000000016 /* Frameworks */,
+				AC0DEAD00000000000000017 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC0DEAD0000000000000001C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AC0DE2000000000000000002 /* runnerTests */,
+			);
+			name = runnerFreeTests;
+			productName = runnerFreeTests;
+			productReference = AC0DEAD00000000000000014 /* runnerFreeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -120,6 +314,9 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				122FC5942F9CEDE000BE113A /* XCRemoteSwiftPackageReference "DeviceKit" */,
+				AC0DE3000000000000000002 /* XCRemoteSwiftPackageReference "libssh2-spm" */,
+				AC0DE4000000000000000002 /* XCLocalSwiftPackageReference "Packages/CCurl" */,
+				AC0DEAD00000000000000010 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 12D2F2F42F843F1F000D37BC /* Products */;
@@ -127,6 +324,10 @@
 			projectRoot = "";
 			targets = (
 				12D2F2F22F843F1F000D37BC /* runner */,
+				AC0DE2000000000000000007 /* runnerTests */,
+				AC0DEAD00000000000000001 /* runnerFree */,
+				AC0DEAD00000000000000013 /* runnerFreeTests */,
+				AC0DE6000000000000000001 /* runnerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -140,6 +341,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AC0DE5000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DE6000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DEAD00000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AC0DEAD00000000000000009 /* runner.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DEAD00000000000000017 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -150,7 +380,53 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AC0DE2000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DE6000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DEAD00000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0DEAD00000000000000015 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AC0DE2000000000000000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 12D2F2F22F843F1F000D37BC /* runner */;
+			targetProxy = AC0DE2000000000000000005 /* PBXContainerItemProxy */;
+		};
+		AC0DE600000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 12D2F2F22F843F1F000D37BC /* runner */;
+			targetProxy = AC0DE600000000000000000B /* PBXContainerItemProxy */;
+		};
+		AC0DEAD0000000000000001C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC0DEAD00000000000000001 /* runnerFree */;
+			targetProxy = AC0DEAD0000000000000001B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		12D2F2FC2F843F20000D37BC /* Debug */ = {
@@ -158,6 +434,7 @@
 			baseConfigurationReference = DEADBEEF1234DEADBEEF1234 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "ic_acode_pro ic_acode_midnight_circuit ic_acode_aurora_pulse ic_acode_terminal_glow ic_acode_solar_flare ic_acode_blueprint ic_acode_pixel_party ic_acode_prism ic_acode_porcelain ic_acode_tangerine ic_acode_tidal ic_acode_lilac ic_acode_volt ic_acode_cobalt ic_acode_glacier";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -188,6 +465,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1011;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -206,8 +484,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.13.5;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -223,6 +502,7 @@
 			baseConfigurationReference = DEADBEEF1234DEADBEEF1234 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "ic_acode_pro ic_acode_midnight_circuit ic_acode_aurora_pulse ic_acode_terminal_glow ic_acode_solar_flare ic_acode_blueprint ic_acode_pixel_party ic_acode_prism ic_acode_porcelain ic_acode_tangerine ic_acode_tidal ic_acode_lilac ic_acode_volt ic_acode_cobalt ic_acode_glacier";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -253,6 +533,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1011;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -265,8 +546,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.13.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -284,18 +566,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Acode";
+				INFOPLIST_KEY_CFBundleDisplayName = Acode;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.acode;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -319,18 +599,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Acode";
+				INFOPLIST_KEY_CFBundleDisplayName = Acode;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.acode;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -343,6 +621,176 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AC0DE2000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				PRODUCT_BUNDLE_IDENTIFIER = app.acode.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/runner";
+			};
+			name = Debug;
+		};
+		AC0DE2000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				PRODUCT_BUNDLE_IDENTIFIER = app.acode.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/runner";
+			};
+			name = Release;
+		};
+		AC0DE6000000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.acode.ui-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = runner;
+			};
+			name = Debug;
+		};
+		AC0DE6000000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.acode.ui-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = runner;
+			};
+			name = Release;
+		};
+		AC0DEAD0000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = DEADBEEF1234DEADBEEF1234 /* Config.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = runner;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(PROJECT_DIR)/../../.ios-build/Free-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Acode;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.acode.free;
+				PRODUCT_MODULE_NAME = runnerFree;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ACODE_FREE";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AC0DEAD0000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = DEADBEEF1234DEADBEEF1234 /* Config.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = runner;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(PROJECT_DIR)/../../.ios-build/Free-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Acode;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.acode.free;
+				PRODUCT_MODULE_NAME = runnerFree;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ACODE_FREE";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AC0DEAD00000000000000019 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				PRODUCT_BUNDLE_IDENTIFIER = app.acode.free.tests;
+				PRODUCT_MODULE_NAME = runnerFreeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ACODE_FREE";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/runnerFree.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/runnerFree";
+			};
+			name = Debug;
+		};
+		AC0DEAD0000000000000001A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				PRODUCT_BUNDLE_IDENTIFIER = app.acode.free.tests;
+				PRODUCT_MODULE_NAME = runnerFreeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ACODE_FREE";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/runnerFree.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/runnerFree";
 			};
 			name = Release;
 		};
@@ -367,7 +815,50 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AC0DE2000000000000000008 /* Build configuration list for PBXNativeTarget "runnerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0DE2000000000000000009 /* Debug */,
+				AC0DE2000000000000000010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AC0DE6000000000000000007 /* Build configuration list for PBXNativeTarget "runnerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0DE6000000000000000008 /* Debug */,
+				AC0DE6000000000000000009 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AC0DEAD0000000000000000B /* Build configuration list for PBXNativeTarget "runnerFree" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0DEAD0000000000000000C /* Debug */,
+				AC0DEAD0000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AC0DEAD00000000000000018 /* Build configuration list for PBXNativeTarget "runnerFreeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0DEAD00000000000000019 /* Debug */,
+				AC0DEAD0000000000000001A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AC0DE4000000000000000002 /* XCLocalSwiftPackageReference "Packages/CCurl" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/CCurl;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		122FC5942F9CEDE000BE113A /* XCRemoteSwiftPackageReference "DeviceKit" */ = {
@@ -378,6 +869,22 @@
 				minimumVersion = 5.8.0;
 			};
 		};
+		AC0DE3000000000000000002 /* XCRemoteSwiftPackageReference "libssh2-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Lakr233/libssh2-spm.git";
+			requirement = {
+				kind = revision;
+				revision = d211fdf8587532cd952927d9f9f3f5167ce6a77f;
+			};
+		};
+		AC0DEAD00000000000000010 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = exactVersion;
+				version = 13.10.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -385,6 +892,20 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 122FC5942F9CEDE000BE113A /* XCRemoteSwiftPackageReference "DeviceKit" */;
 			productName = DeviceKit;
+		};
+		AC0DE3000000000000000003 /* CSSH2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC0DE3000000000000000002 /* XCRemoteSwiftPackageReference "libssh2-spm" */;
+			productName = CSSH2;
+		};
+		AC0DE4000000000000000003 /* AcodeCurl */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AcodeCurl;
+		};
+		AC0DEAD00000000000000011 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC0DEAD00000000000000010 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

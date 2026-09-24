@@ -428,6 +428,7 @@ declare type LangStrings = {
   "change encoding": string;
   "reopen file": string;
   "plugin min version": string;
+  "plugin min version required": string;
   "color preview": string;
   "confirm": string;
   "problems": string;
@@ -799,6 +800,7 @@ declare type LangStrings = {
   "login-to-view": string;
   "iap-plugin-purchase-warning": string;
   "iap-pro-purchase-warning": string;
+  "iap-pro-purchase-warning-ios": string;
   "confirm-login": string;
   "terminal:failsafe": string;
   "terminal:failsafe-info": string;

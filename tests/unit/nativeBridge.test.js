@@ -183,6 +183,13 @@ describe("typed native API behavior", () => {
         const fs = new window.FileSystem("files");
         const file = new window.FileEntry("a #.txt", "/a #.txt", fs, "file:///private/a%20%23.txt");
         expect(file.toInternalURL()).toBe("https://localhost/__cdvfile_files__/a%20%23.txt");
+        const reserved = new window.FileEntry("question ? %3F.txt", "/folder ?/question ? %3F.txt", fs, "file:///private/folder%20%3F/question%20%3F%20%253F.txt");
+        const reservedURL = new URL(reserved.toInternalURL());
+        expect(decodeURIComponent(reservedURL.pathname)).toBe("/__cdvfile_files__/folder ?/question ? %3F.txt");
+        expect(reservedURL.search).toBe("");
+        expect(reservedURL.hash).toBe("");
+        const versioned = new window.FileEntry("worker.js", "/worker.js", fs, "file:///private/worker.js?revision=2");
+        expect(versioned.toInternalURL()).toBe("https://localhost/__cdvfile_files__/worker.js?revision=2");
         const content = new window.FileEntry("test", "/ignored", new window.FileSystem("content"), "content://provider/tree/a%3Ab/document/a%3Ab%2Ftest");
         expect(content.toInternalURL()).toBe("https://localhost/__cdvfile_content__/provider/tree/a%3Ab/document/a%3Ab%2Ftest");
         const reader = fs.root.createReader();
@@ -280,6 +287,28 @@ describe("typed native API behavior", () => {
         expect(closes).toEqual([[1000, "done"]]);
         expect(socket.readyState).toBe(3);
         expect(() => socket.send("late")).toThrow("not open");
+    });
+
+    test("restores iOS file references before publishing device readiness", async () => {
+        const { window, pending } = await createBridge("paid", false, "ios");
+        window.localStorage.recentFiles = JSON.stringify(["file:///old/Documents/file.txt"]);
+        const ready = [];
+        window.document.addEventListener("deviceready", () => ready.push(JSON.parse(window.localStorage.recentFiles)));
+        for (const request of pending.splice(0)) {
+            const success = request.service === "File" ? {
+                dataDirectory: "file:///current/Library/NoCloud/",
+            } : request.service === "Device" ? { platform: "iOS" } : {};
+            window.iOS.callback({ id: request.id, success });
+        }
+        window.document.dispatchEvent(new window.Event("DOMContentLoaded"));
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(ready).toEqual([]);
+        const request = pending.find(item => item.action === "getPathReplacements");
+        expect(request?.service).toBe("File");
+        window.iOS.callback({ id: request.id, success: [{ from: "file:///old/Documents", to: "file:///current/Documents" }] });
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(ready).toEqual([["file:///current/Documents/file.txt"]]);
+        expect(window.Bridge.file.pathReplacements).toBeUndefined();
     });
 
     test("routes iOS callbacks and toast through the retained platform adapter", async () => {

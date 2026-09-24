@@ -10,6 +10,7 @@ final class NativeService: BaseService {
 
     private var cameraCallback: Callback?
     private var intentObserver: NSObjectProtocol?
+    private lazy var browser = SafariService(bridge: bridge!)
     private lazy var hapticGenerator = UIImpactFeedbackGenerator(style: .medium)
     private var hapticsEngine: CHHapticEngine?
     private let supportsHaptics: Bool = {
@@ -39,10 +40,8 @@ final class NativeService: BaseService {
             case "getIpAddresses":          getIpAddresses(args: args, callback: callback)
             case "hideSplashScreen":        callback.success()
             case "haptic":                  haptic(callback: callback)
-            case "exitApp":                 exit(0)
-            case "restartApp":              exit(0)
+            case "exitApp", "restartApp": callback.error("Programmatic app exit is unavailable on iOS")
             case "requestIgnoreBatteryOptimization": callback.success(1)
-            case "setKeyboardSuggestionsEnabled" : callback.success(1)
             default:                        callback.error("Unknown action: \(action)")
         }
     }
@@ -50,53 +49,13 @@ final class NativeService: BaseService {
     // MARK: - shareFile / shareText
 
     private func shareFile(args: [Any], callback: Callback) {
-        guard let uriStr = args[safe: 0] as? String else {
-            callback.error("uri required"); return
-        }
-        let filename = args[safe: 1] as? String
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let cachesURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        let filePath: String
-        if uriStr.hasPrefix("acode://localhost/__file__/") {
-            let rel = String(uriStr.dropFirst("acode://localhost/__file__/".count))
-            filePath = documentsURL.appendingPathComponent(rel).path
-        } else if uriStr.hasPrefix("acode://localhost/__cache__/") {
-            let rel = String(uriStr.dropFirst("acode://localhost/__cache__/".count))
-            filePath = cachesURL.appendingPathComponent(rel).path
-        } else {
-            filePath = uriStr
-        }
-        let sourceURL = URL(fileURLWithPath: filePath)
-        let shareFilename = filename ?? sourceURL.lastPathComponent
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(shareFilename)
-        try? FileManager.default.removeItem(at: tempURL)
-        do {
-            try FileManager.default.copyItem(at: sourceURL, to: tempURL)
-        } catch {
-            callback.error("Could not copy file for sharing: \(error.localizedDescription)")
-            return
-        }
-        DispatchQueue.main.async { [weak self] in
-            guard let vc = self?.viewController else { return }
-            let activity = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-            activity.completionWithItemsHandler = { _, _, _, _ in
-                try? FileManager.default.removeItem(at: tempURL)
-                callback.success()
-            }
-            vc.present(activity, animated: true)
-        }
+        guard let bridge else { callback.error("Native bridge unavailable"); return }
+        ShareService(bridge: bridge).exec(action: "shareFile", args: args, callback: callback)
     }
 
     private func shareText(args: [Any], callback: Callback) {
-        guard let text = args[safe: 0] as? String else {
-            callback.error("text required"); return
-        }
-        DispatchQueue.main.async { [weak self] in
-            guard let vc = self?.viewController else { return }
-            let activity = UIActivityViewController(activityItems: [text], applicationActivities: nil)
-            activity.completionWithItemsHandler = { _, _, _, _ in callback.success() }
-            vc.present(activity, animated: true)
-        }
+        guard let bridge else { callback.error("Native bridge unavailable"); return }
+        ShareService(bridge: bridge).exec(action: "shareText", args: args, callback: callback)
     }
 
     // MARK: - getAppInfo
@@ -130,20 +89,10 @@ final class NativeService: BaseService {
     // MARK: - openInBrowser
 
     private func openInBrowser(args: [Any], callback: Callback) {
-        guard let urlString = args[safe: 0] as? String,
-              let url = URL(string: urlString) else {
-            callback.error("Invalid URL"); return
-        }
-        DispatchQueue.main.async { [weak self] in
-            guard let vc = self?.viewController else { return }
-            let safari = SFSafariViewController(url: url)
-            safari.dismissButtonStyle = .close
-            vc.present(safari, animated: true)
-            callback.success()
-        }
+        browser.exec(action: "open", args: args, callback: callback)
     }
 
-    // MARK: - setIntentHandler (foxbiz:// deep links)
+    // MARK: - setIntentHandler
 
     private func setIntentHandler(args: [Any], callback: Callback) {
         if let existing = intentObserver {
@@ -155,10 +104,6 @@ final class NativeService: BaseService {
             if let url = notification.object as? URL {
                 callback.success(url.absoluteString, keep: true)
             }
-        }
-        // Wire AppDelegate to post the notification
-        AppDelegate.shared?.intentHandler = { url in
-            NotificationCenter.default.post(name: .acodeDeepLink, object: url)
         }
         callback.success(nil, keep: true)
     }
@@ -256,7 +201,7 @@ final class NativeService: BaseService {
     // MARK: - Permissions
 
     private enum PermissionKind {
-        case camera, microphone, notifications, photoLibrary, alwaysGranted
+        case camera, microphone, notifications, photoLibrary, unsupported
     }
 
     private func permissionKind(for name: String) -> PermissionKind {
@@ -264,8 +209,8 @@ final class NativeService: BaseService {
         if lo.contains("camera") { return .camera }
         if lo.contains("record_audio") || lo.contains("microphone") { return .microphone }
         if lo.contains("notification") { return .notifications }
-        if lo.contains("read_external") || lo.contains("write_external") || lo.contains("read_media") || lo.contains("photo") { return .photoLibrary }
-        return .alwaysGranted
+        if lo.contains("photo") { return .photoLibrary }
+        return .unsupported
     }
 
     private func requestPermission(args: [Any], callback: Callback) {
@@ -295,8 +240,9 @@ final class NativeService: BaseService {
             completion?(granted)
         }
         switch kind {
-        case .alwaysGranted:
-            done(true)
+        case .unsupported:
+            callback?.error("This permission is unavailable on iOS; use the Files picker for document access")
+            completion?(false)
         case .camera:
             AVCaptureDevice.requestAccess(for: .video) { done($0) }
         case .microphone:
@@ -315,8 +261,8 @@ final class NativeService: BaseService {
             callback.error("Permission name required"); return
         }
         switch permissionKind(for: permission) {
-        case .alwaysGranted:
-            callback.success(1)
+        case .unsupported:
+            callback.success(0)
         case .camera:
             callback.success(AVCaptureDevice.authorizationStatus(for: .video) == .authorized ? 1 : 0)
         case .microphone:
@@ -432,5 +378,3 @@ extension Notification.Name {
 }
 
 import UserNotifications
-
-

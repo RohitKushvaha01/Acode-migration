@@ -6,6 +6,7 @@ import { afterEach, expect, test, vi } from "vitest";
 const require = createRequire(import.meta.url);
 const { getAppConfig } = require("../../dev/config.js");
 const { parseOptions } = require("../../dev/scripts/android.js");
+const { parseOptions: parseIOSOptions } = require("../../dev/scripts/ios.js");
 const packagePath = path.resolve(import.meta.dirname, "../../package.json");
 
 afterEach(() => vi.restoreAllMocks());
@@ -22,7 +23,14 @@ test.each([
 	expect(parseOptions(["android", "prod", "bundle", "fdroid", "--target=device"])).toMatchObject({
 		targetId: name, variant, mode: "p", bundle: true, fdroid: true, target: "device",
 	});
+	expect(parseIOSOptions(["ios", "prod", "--target=simulator"])).toMatchObject({
+		targetId: name, variant, mode: "Release", target: "simulator", device: false,
+	});
 
+});
+
+test.each(["free", "paid", "fdroid", "apk", "bundle"])("rejects Android-only %s arguments for iOS", (argument) => {
+	expect(() => parseIOSOptions(["ios", argument])).toThrow(/For iOS/);
 });
 
 test("rereads package identity after an edit and rejects unsupported package names", () => {

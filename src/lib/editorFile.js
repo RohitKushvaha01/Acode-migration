@@ -20,6 +20,7 @@ import tag from "html-tag-js";
 import quickToolsAdapters from "lib/quickToolsAdapter";
 import mimeTypes from "mime-types";
 import { applyHighlightStyles } from "utils/codeHighlight";
+import haptic from "utils/haptic";
 import helpers from "utils/helpers";
 import Path from "utils/Path";
 import { readRemoteFilePreview } from "utils/remoteFilePreview";
@@ -750,7 +751,7 @@ export default class EditorFile {
 				// the long press / right click ends.
 				this.#tab.oncontextmenu = (event) => {
 					if (appSettings.value.vibrateOnTap) {
-						navigator.vibrate(config.VIBRATION_TIME);
+						haptic(config.VIBRATION_TIME);
 					}
 					openTabContextMenuOnRelease(this, event);
 				};

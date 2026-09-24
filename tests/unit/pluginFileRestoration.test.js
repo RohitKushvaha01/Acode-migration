@@ -166,6 +166,7 @@ function setup() {
 		"src/lib/editorFile.js",
 		{
 			...unused,
+			"utils/haptic": vi.fn(),
 			fileSystem: filesystem,
 			"@codemirror/state": { EditorState, EditorSelection },
 			"cm/editorUtils": { getDocText: (doc) => doc.toString() },

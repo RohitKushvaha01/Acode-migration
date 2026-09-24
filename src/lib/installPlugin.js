@@ -10,6 +10,7 @@ import { isVersionGreater } from "utils/version";
 import config from "./config";
 import InstallState from "./installState";
 import { loadPluginWithTimeout } from "./loadPlugins";
+import platform from "./platform";
 
 /** @type {import("dialogs/loader").Loader} */
 let loaderDialog;
@@ -447,13 +448,18 @@ async function resolveDep(manifest) {
 	let isPaid = false;
 
 	isPaid = manifest.price > 0;
-	[product] = await helpers.promisify(iap.getProducts, [manifest.sku]);
-	if (product) {
-		const purchase = await getPurchase(product.productId);
-		purchaseToken = purchase?.purchaseToken;
+	if (platform.pluginPurchases) {
+		[product] = await helpers.promisify(iap.getProducts, [manifest.sku]);
+		if (product) {
+			const purchase = await getPurchase(product.productId);
+			purchaseToken = purchase?.purchaseToken;
+		}
 	}
 
-	if (isPaid && !purchaseToken) {
+	const accountOwned = !platform.pluginPurchases && manifest.owned;
+	if (isPaid && !purchaseToken && !accountOwned) {
+		if (!platform.pluginPurchases)
+			throw new Error(strings["product not available"]);
 		if (!product) throw new Error("Product not found");
 		const apiStatus = await helpers.checkAPIStatus();
 
@@ -462,7 +468,9 @@ async function resolveDep(manifest) {
 			return true;
 		}
 
-		iap.setPurchaseUpdatedListener(...purchaseListener(onpurchase, onerror));
+		iap.setPurchaseUpdatedListener(
+			...purchaseListener(onpurchase, onerror, product.productId),
+		);
 		loaderDialog.setMessage(strings["loading..."]);
 		await helpers.promisify(iap.purchase, product.productId);
 

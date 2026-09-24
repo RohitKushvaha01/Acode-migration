@@ -12,6 +12,8 @@ Welcome to Acode Editor - a powerful and versatile code editing tool designed sp
 
 Acode runs in an Android WebView with its own native service bridge. Android sources are tracked directly; native integrations are vendored and built with Java 27, the Gradle 9.8 RC3 wrapper and Android Gradle Plugin 9.4.1. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and build commands.
 
+An iOS port is in progress using the same editor and plugin APIs with Swift native services. It is not release-ready; current coverage and remaining features are tracked in [docs/ios-port.md](docs/ios-port.md).
+
 ## • Features
 
 - Edit and create websites, and instantly preview them in a browser.
@@ -33,13 +35,11 @@ You can get Acode Editor from popular platforms:
 <pre>
 Acode/
 |
-|- src/   - Core code and language files
-|
-|- www/   - Public documents, compiled files, and HTML templates
+|- src/   - Application source, index.html, language files, and resources
 |
 |- platforms/android/ - Native Android app, services, resources, and Gradle wrapper
 |
-|- platforms/ios/ - iOS template retained for a future Acode port
+|- platforms/ios/ - iOS app, runner/lib native services, and simulator tests
 |- src/platforms/ - Android and iOS bridge transports
 |- src/native/ - TypeScript native APIs and shared bridge
 |
@@ -47,6 +47,10 @@ Acode/
 |
 |- codemirror-lsp-client/ - Git submodule providing @codemirror/lsp-client (clone with --recurse-submodules)
 </pre>
+
+As in the Proteus template, web sources live in `src/`. Rspack generates
+`platforms/android/app/src/main/assets/bundle/` or `platforms/ios/runner/bundle/`;
+these ignored directories contain the HTML, static assets, and compiled scripts.
 
 ## • Multi-language Support
 
@@ -61,7 +65,9 @@ pnpm run lang update
 
 ## • Contributing & Building the Application
 
-Build scripts live in `dev/`. Set `package.json.name` to `com.foxdebug.acode` (paid) or `com.foxdebug.acodefree` (free), then run `npm run build -- dev apk`. Paid builds exclude AdMob and its SDKs.
+Build scripts live in `dev/`. Set `package.json.name` to `com.foxdebug.acode` (paid) or `com.foxdebug.acodefree` (free), then run `npm run build -- dev apk`. Paid builds exclude AdMob and its SDKs. The iOS build commands and free-edition advertising configuration are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+For iOS, copy `platforms/ios/Config.xcconfig.example` to `platforms/ios/Config.xcconfig` on a new checkout. Keep only local signing settings in this ignored file; public build settings belong in the Xcode project.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions.
 

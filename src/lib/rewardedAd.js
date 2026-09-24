@@ -1,4 +1,5 @@
 import config from "./config";
+import platform from "./platform";
 import startAd, {
 	adUnitIdRewarded,
 	getPrivacyState,
@@ -14,7 +15,7 @@ export function isRewardedAdSupported() {
 		!config.HAS_PRO &&
 			typeof admob !== "undefined" &&
 			admob.RewardedAd &&
-			window.ANDROID_SDK_INT >= 29 &&
+			(platform.isIOS || window.ANDROID_SDK_INT >= 29) &&
 			adUnitIdRewarded,
 	);
 }

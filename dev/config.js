@@ -3,7 +3,7 @@ const path = require("node:path");
 const ID_PAID = "com.foxdebug.acode";
 const ID_FREE = "com.foxdebug.acodefree";
 
-module.exports = { getAppConfig };
+module.exports = { getAppConfig, getWebBundlePath };
 
 function getAppConfig() {
 	const { name } = JSON.parse(
@@ -15,4 +15,14 @@ function getAppConfig() {
 		);
 	}
 	return { variant: name === ID_FREE ? "free" : "paid", targetId: name };
+}
+
+function getWebBundlePath(platform = process.env.ACODE_PLATFORM || "android") {
+	return path.resolve(
+		__dirname,
+		"..",
+		platform === "ios"
+			? "platforms/ios/runner/bundle"
+			: "platforms/android/app/src/main/assets/bundle",
+	);
 }

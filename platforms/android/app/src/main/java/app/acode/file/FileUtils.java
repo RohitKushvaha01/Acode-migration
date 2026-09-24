@@ -1309,7 +1309,9 @@ public class FileUtils extends Service {
                             fileTarget = fileTarget.replace("/android_asset/", "");
                         }
 
-                        Uri fileUri = Uri.parse(fileTarget);
+                        Uri fileUri = "file".equals(fileSystem.rootUri.getScheme())
+                            ? Uri.fromFile(new File(fileTarget))
+                            : Uri.parse(fileTarget);
                         String mimeType = null;
 
                         try {

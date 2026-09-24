@@ -11,6 +11,7 @@ import config from "lib/config";
 import customTab from "lib/customTab";
 import installPlugin from "lib/installPlugin";
 import InstallState from "lib/installState";
+import platform from "lib/platform";
 import settings from "lib/settings";
 import { interstitialAd } from "lib/startAd";
 import markdownIt from "markdown-it";
@@ -186,6 +187,7 @@ export default async function PluginInclude(
 					price = `${remotePlugin.currencySymbol ?? ""}${remotePlugin.price}`;
 
 					if (
+						platform.pluginPurchases &&
 						helpers.isIapAvailable() &&
 						!purchased &&
 						(await helpers.checkAPIStatus())
@@ -269,6 +271,7 @@ export default async function PluginInclude(
 	}
 
 	async function buy(e) {
+		if (!platform.pluginPurchases) return;
 		const $button = e.target;
 		const oldText = $button.textContent;
 
@@ -315,7 +318,9 @@ export default async function PluginInclude(
 				return;
 			}
 
-			iap.setPurchaseUpdatedListener(...purchaseListener(onpurchase, onerror));
+			iap.setPurchaseUpdatedListener(
+				...purchaseListener(onpurchase, onerror, product.productId),
+			);
 			$button.textContent = strings["loading..."];
 			await helpers.promisify(iap.purchase, product.productId);
 
@@ -351,6 +356,7 @@ export default async function PluginInclude(
 	}
 
 	async function refund(e) {
+		if (!platform.pluginPurchases) return;
 		const $button = e.target;
 		const oldText = $button.textContent;
 

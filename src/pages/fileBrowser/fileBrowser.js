@@ -17,6 +17,7 @@ import actionStack from "lib/actionStack";
 import checkFiles from "lib/checkFiles";
 import config from "lib/config";
 import openFolder from "lib/openFolder";
+import platform from "lib/platform";
 import projects from "lib/projects";
 import recents from "lib/recents";
 import remoteStorage from "lib/remoteStorage";
@@ -27,6 +28,7 @@ import mustache from "mustache";
 import filesSettings from "settings/filesSettings";
 import URLParse from "url-parse";
 import copyEntry from "utils/copyEntry";
+import haptic from "utils/haptic";
 import helpers from "utils/helpers";
 import Url from "utils/Url";
 import _addMenu from "./add-menu.hbs";
@@ -1090,7 +1092,7 @@ function FileBrowserInclude(mode, info, doesOpenLast = true) {
 
 			async function contextMenuHandler() {
 				if (appSettings.value.vibrateOnTap) {
-					navigator.vibrate(config.VIBRATION_TIME);
+					haptic(config.VIBRATION_TIME);
 				}
 				if (isOpenDoc) return;
 
@@ -1348,7 +1350,7 @@ function FileBrowserInclude(mode, info, doesOpenLast = true) {
 		}
 
 		async function listAllStorages() {
-			let hasInternalStorage = true;
+			let hasInternalStorage = !!Bridge.file.externalRootDirectory;
 			allStorages.length = 0;
 
 			if (ANDROID_SDK_INT === 29) {
@@ -1381,36 +1383,38 @@ function FileBrowserInclude(mode, info, doesOpenLast = true) {
 				);
 			}
 
-			try {
-				const terminalPublicUrl = Bridge.file.dataDirectory + "public";
-				const exists = await fsOperation(terminalPublicUrl).exists();
-				if (!exists) {
-					await fsOperation(Bridge.file.dataDirectory).createDirectory(
-						"public",
+			if (platform.localExecution) {
+				try {
+					const terminalPublicUrl = Bridge.file.dataDirectory + "public";
+					const exists = await fsOperation(terminalPublicUrl).exists();
+					if (!exists) {
+						await fsOperation(Bridge.file.dataDirectory).createDirectory(
+							"public",
+						);
+					}
+
+					// Check if this storage is not already in the list
+					const terminalPublicStorageExists = allStorages.find(
+						(storage) =>
+							storage.uuid === "terminal-public" ||
+							storage.url === terminalPublicUrl,
 					);
-				}
 
-				// Check if this storage is not already in the list
-				const terminalPublicStorageExists = allStorages.find(
-					(storage) =>
-						storage.uuid === "terminal-public" ||
-						storage.url === terminalPublicUrl,
-				);
+					if (!terminalPublicStorageExists) {
+						util.pushFolder(allStorages, "Terminal Public", terminalPublicUrl, {
+							uuid: "terminal-public",
+						});
+					}
 
-				if (!terminalPublicStorageExists) {
-					util.pushFolder(allStorages, "Terminal Public", terminalPublicUrl, {
-						uuid: "terminal-public",
-					});
+					// Migrate any files left in the legacy alpine/home and
+					// alpine/root directories into public/MIGRATE so they are
+					// not hidden after the home/root/public merge.
+					if (typeof Terminal !== "undefined" && Terminal.migrateLegacyHome) {
+						Terminal.migrateLegacyHome();
+					}
+				} catch (err) {
+					console.error("Error while adding public directory", err);
 				}
-
-				// Migrate any files left in the legacy alpine/home and
-				// alpine/root directories into public/MIGRATE so they are
-				// not hidden after the home/root/public merge.
-				if (typeof Terminal !== "undefined" && Terminal.migrateLegacyHome) {
-					Terminal.migrateLegacyHome();
-				}
-			} catch (err) {
-				console.error("Error while adding public directory", err);
 			}
 
 			try {
@@ -1418,7 +1422,7 @@ function FileBrowserInclude(mode, info, doesOpenLast = true) {
 				res.forEach((storage) => {
 					if (storageList.find((s) => s.uuid === storage.uuid)) return;
 					let path;
-					if (storage.path && isStorageManager) {
+					if (storage.path && (platform.isIOS || globalThis.isStorageManager)) {
 						path = "file://" + storage.path;
 					}
 					util.pushFolder(allStorages, storage.name, path || "", {

@@ -15,6 +15,7 @@ import FileReader from "./FileReader";
 import FileWriter from "./FileWriter";
 import Metadata from "./Metadata";
 import ProgressEvent from "./ProgressEvent";
+import restorePaths from "./restorePaths";
 import { FileUploadOptions, FileUploadResult, Flags } from "./transferTypes";
 
 const call = bridge("File");
@@ -62,8 +63,14 @@ export default function installFileAPI(
 		resolveLocalFileSystemURI: resolveLocalFileSystemURL,
 	};
 	for (const [name, value] of Object.entries(globals)) expose(name, value);
-	return call<Record<string, string>>("requestAllPaths").then((paths) =>
-		Object.assign(file, paths),
+	return call<Record<string, string | null>>("requestAllPaths").then(
+		async (paths) => {
+			if (Bridge.platformId === "ios")
+				restorePaths(
+					await call<Parameters<typeof restorePaths>[0]>("getPathReplacements"),
+				);
+			return Object.assign(file, paths);
+		},
 	);
 }
 

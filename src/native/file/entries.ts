@@ -288,7 +288,7 @@ export class FileSystem {
 		);
 	}
 	static encodeURIPath(path: string) {
-		return encodeURI(path).replace(/#/g, "%23");
+		return encodeURI(path).replace(/#/g, "%23").replace(/\?/g, "%3F");
 	}
 	format(fullPath: string, nativeURL: string) {
 		let path: string;
@@ -299,7 +299,11 @@ export class FileSystem {
 			if (!path.startsWith("/")) path = `/${path}`;
 			path += /\?.*/.exec(nativeURL)?.[0] ?? "";
 		}
-		return `${location.origin}/__cdvfile_${this.name}__${path}`;
+		const origin =
+			location.origin === "null"
+				? `${location.protocol}//${location.host}`
+				: location.origin;
+		return `${origin}/__cdvfile_${this.name}__${path}`;
 	}
 	["__format__"](path: string, url: string) {
 		return this.format(path, url);
